@@ -1465,7 +1465,7 @@ static void do_bootstrapping(const char*        fnres,
         bsProfiles_av[i] /= opt->nBootStrap;
         bsProfiles_av2[i] /= opt->nBootStrap;
         tmp    = bsProfiles_av2[i] - gmx::square(bsProfiles_av[i]);
-        stddev = (tmp >= 0.) ? std::sqrt(tmp) : 0.; /* Catch rouding errors */
+        stddev = (tmp >= 0.) ? std::sqrt(tmp) : 0.; /* Catch rounding errors */
         fprintf(fp, "%e\t%e\t%e\n", (i + 0.5) * opt->dz + opt->min, bsProfiles_av[i], stddev);
     }
     xvgrclose(fp);
