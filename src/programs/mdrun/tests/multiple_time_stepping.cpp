@@ -197,7 +197,7 @@ TEST_P(MtsComparisonTest, WithinTolerances)
     runner_.edrFileName_                     = simulator2EdrFileName.u8string();
     runMdrun(&runner_);
 
-    // Compare simulation results at step 0, which should be indentical
+    // Compare simulation results at step 0, which should be identical
     compareEnergies(simulator1EdrFileName.u8string(),
                     simulator2EdrFileName.u8string(),
                     energyTermsToCompareStep0,
