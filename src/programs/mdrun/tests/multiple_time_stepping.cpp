@@ -61,7 +61,7 @@ namespace
 /*! \brief Test fixture base for two integration schemes
  *
  * This test ensures that integration with(out) different multiple time stepping
- * scheems (called via different mdp options) yield near identical energies,
+ * schemes (called via different mdp options) yield near identical energies,
  * forces and virial at step 0 and similar energies and virial after 4 steps.
  */
 using MtsComparisonTestParams = std::tuple<std::string, std::string>;
