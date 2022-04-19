@@ -1616,7 +1616,7 @@ static void read_tpr_header(const char* fn, t_UmbrellaHeader* header, t_Umbrella
             {
                 gmx_fatal(FARGS,
                           "%s: Pull coordinate %d is of type \"%s\", expected \"umbrella\". Only "
-                          "umbrella coodinates can enter WHAM.\n"
+                          "umbrella coordinates can enter WHAM.\n"
                           "If you have umbrella and non-umbrella coordinates, you can select the "
                           "umbrella coordinates with gmx wham -is\n",
                           fn,
