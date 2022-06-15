@@ -2371,7 +2371,7 @@ int Mdrunner::mdrunner()
     }
 #endif
     return rc;
-} // namespace gmx
+} // Mdrunner::mdrunner
 
 Mdrunner::~Mdrunner()
 {
@@ -2386,7 +2386,7 @@ Mdrunner::~Mdrunner()
                    "restraints added during runner life time should be cleared at runner "
                    "destruction.");
     }
-};
+}
 
 void Mdrunner::addPotential(std::shared_ptr<gmx::IRestraintPotential> puller, const std::string& name)
 {
