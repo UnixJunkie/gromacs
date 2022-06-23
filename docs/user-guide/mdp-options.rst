@@ -3140,16 +3140,32 @@ Non-equilibrium MD
    The velocities of deformation for the box elements: a(x) b(y) c(z)
    b(x) c(x) c(y). Each step the box elements for which :mdp:`deform`
    is non-zero are calculated as: box(ts)+(t-ts)*deform, off-diagonal
-   elements are corrected for periodicity. The coordinates are
-   transformed accordingly. Frozen degrees of freedom are (purposely)
-   also transformed. The time ts is set to t at the first step and at
+   elements are corrected for periodicity.
+   The time ts is set to t at the first step and at
    steps at which x and v are written to trajectory to ensure exact
    restarts. Deformation can be used together with semiisotropic or
    anisotropic pressure coupling when the appropriate
    compressibilities are set to zero. The diagonal elements can be
    used to strain a solid. The off-diagonal elements can be used to
-   shear a solid or a liquid.
+   shear a solid or a liquid. Note that the coordinates are not
+   affected directly by this option. A flow field should be set up
+   to make the coordinates follow the deformation. This can be done
+   with the :mdp:`deform-init-flow` option. The flow field is
+   removed from the kinetic energy by :ref:`gmx mdrun` so the actual
+   temperature and pressure of the system are reported.
 
+.. mdp:: deform-init-flow
+
+   .. mdp-value:: no
+
+      Do not modify the velocties
+
+   .. mdp-value:: yes
+
+      When the :mdp:`deform` option is active, add a velocity profile
+      corresponding to the box deformation to the initial velocities.
+      This is done after computing observables from the initial state
+      such as the initial tempature.
 
 Electric fields
 ^^^^^^^^^^^^^^^

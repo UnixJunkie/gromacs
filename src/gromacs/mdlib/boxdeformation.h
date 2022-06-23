@@ -68,8 +68,8 @@ public:
                    const Matrix3x3& deformationTensor,
                    const Matrix3x3& referenceBox);
 
-    //! Deform \c x and \c box at this \c step;
-    void apply(ArrayRef<RVec> x, Matrix3x3* box, int64_t step);
+    //! Deform \c box at this \c step;
+    void apply(Matrix3x3* box, int64_t step);
 
 private:
     //! The integrator time step.

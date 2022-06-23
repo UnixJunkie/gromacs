@@ -845,7 +845,6 @@ void gmx::LegacySimulator::do_md()
     bLastStep = (bLastStep || (ir->nsteps >= 0 && step_rel > ir->nsteps));
     while (!bLastStep)
     {
-
         /* Determine if this is a neighbor search step */
         bNStList = (ir->nstlist > 0 && step % ir->nstlist == 0);
 
@@ -1227,6 +1226,7 @@ void gmx::LegacySimulator::do_md()
                          top,
                          state->box,
                          state->x.arrayRefWithPadding(),
+                         state->v.arrayRefWithPadding().unpaddedArrayRef(),
                          &state->hist,
                          &f.view(),
                          force_vir,

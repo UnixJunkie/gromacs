@@ -2076,6 +2076,9 @@ static DDSystemInfo getSystemInfo(const gmx::MDLogger&              mdlog,
     }
     systemInfo.cellsizeLimit = std::max(systemInfo.cellsizeLimit, systemInfo.constraintCommunicationRange);
 
+    systemInfo.haveBoxDeformation = ir_haveBoxDeformation(ir);
+    setBoxDeformationRate(ir.deform, box, systemInfo.boxDeformationRate);
+
     return systemInfo;
 }
 

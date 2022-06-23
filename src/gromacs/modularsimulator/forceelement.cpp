@@ -247,6 +247,8 @@ void ForceElement::run(Step step, Time time, unsigned int flags)
         Awh*       awh = nullptr;
         gmx_edsam* ed  = nullptr;
 
+        auto v = statePropagatorData_->velocitiesView();
+
         do_force(fplog_,
                  cr_,
                  ms,
@@ -261,6 +263,7 @@ void ForceElement::run(Step step, Time time, unsigned int flags)
                  localTopology_,
                  box,
                  x,
+                 v.unpaddedArrayRef(),
                  hist,
                  &forces,
                  force_vir,

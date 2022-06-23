@@ -2148,7 +2148,6 @@ void get_ir(const char*     mdparin,
     char*       dumstr[2];
     double      dumdub[2][6];
     int         i, j, m;
-    char        warn_buf[STRLEN];
     t_lambda*   fep    = ir->fepvals.get();
     t_expanded* expand = ir->expandedvals.get();
 
@@ -2581,6 +2580,7 @@ void get_ir(const char*     mdparin,
     setStringEntry(&inp, "freezedim", inputrecStrings->frdim, nullptr);
     ir->cos_accel = get_ereal(&inp, "cos-acceleration", 0, wi);
     setStringEntry(&inp, "deform", inputrecStrings->deform, nullptr);
+    opts->deformInitFlow = (getEnum<Boolean>(&inp, "deform-init-flow", wi) != Boolean::No);
 
     /* simulated tempering variables */
     printStringNewline(&inp, "simulated tempering variables");
@@ -3000,26 +3000,6 @@ void get_ir(const char*     mdparin,
                 if (ir->deform[i][j] != 0 && ir->pressureCouplingOptions.compress[i][j] != 0)
                 {
                     wi->addError("A box element has deform set and compressibility > 0");
-                }
-            }
-        }
-        for (i = 0; i < 3; i++)
-        {
-            for (j = 0; j < i; j++)
-            {
-                if (ir->deform[i][j] != 0)
-                {
-                    for (m = j; m < DIM; m++)
-                    {
-                        if (ir->pressureCouplingOptions.compress[m][j] != 0)
-                        {
-                            sprintf(warn_buf,
-                                    "An off-diagonal box element has deform set while "
-                                    "compressibility > 0 for the same component of another box "
-                                    "vector, this might lead to spurious periodicity effects.");
-                            wi->addWarning(warn_buf);
-                        }
-                    }
                 }
             }
         }
@@ -5131,9 +5111,15 @@ void triple_check(const char* mdparin, t_inputrec* ir, gmx_mtop_t* sys, WarningH
         }
     }
 
+
     if (ir->bDoAwh && !haveConstantEnsembleTemperature(*ir))
     {
         wi->addError("With AWH a constant ensemble temperature is required");
+    }
+
+    if (ir_haveBoxDeformation(*ir) && ir->opts.ngtc != 1)
+    {
+        wi->addError("With box deformation, a single temperature coupling group is required");
     }
 
     check_disre(*sys);

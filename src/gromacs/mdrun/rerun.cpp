@@ -662,6 +662,7 @@ void gmx::LegacySimulator::do_rerun()
                          top,
                          state->box,
                          state->x.arrayRefWithPadding(),
+                         {},
                          &state->hist,
                          &f.view(),
                          force_vir,

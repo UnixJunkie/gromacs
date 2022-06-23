@@ -110,7 +110,7 @@ BoxDeformation::BoxDeformation(const double     timeStep,
 {
 }
 
-void BoxDeformation::apply(ArrayRef<RVec> x, Matrix3x3* box, const int64_t step)
+void BoxDeformation::apply(Matrix3x3* box, const int64_t step)
 {
     const real elapsedTime = (step + 1 - initialStep_) * timeStep_;
     Matrix3x3  updatedBox  = *box;
@@ -146,14 +146,7 @@ void BoxDeformation::apply(ArrayRef<RVec> x, Matrix3x3* box, const int64_t step)
             }
         }
     }
-    // Update the positions
-    Matrix3x3 mu = multiplyBoxMatrices(updatedBox, invertBoxMatrix(*box));
-    for (auto& thisX : x)
-    {
-        thisX[XX] = mu(XX, XX) * thisX[XX] + mu(YY, XX) * thisX[YY] + mu(ZZ, XX) * thisX[ZZ];
-        thisX[YY] = mu(YY, YY) * thisX[YY] + mu(ZZ, YY) * thisX[ZZ];
-        thisX[ZZ] = mu(ZZ, ZZ) * thisX[ZZ];
-    }
+
     // Return the updated box
     *box = updatedBox;
 }
