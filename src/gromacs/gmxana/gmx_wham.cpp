@@ -246,7 +246,7 @@ typedef struct UmbrellaOptions // NOLINT(clang-analyzer-optin.performance.Paddin
     gmx_bool bAuto;                  //!< determine min and max automatically but do not exit
 
     gmx_bool          verbose;    //!< more noisy wham mode
-    int               stepchange; //!< print maximum change in prof after how many interations
+    int               stepchange; //!< print maximum change in prof after how many interactions
     gmx_output_env_t* oenv;       //!< xvgr options
     /*!\}*/
     /*!
