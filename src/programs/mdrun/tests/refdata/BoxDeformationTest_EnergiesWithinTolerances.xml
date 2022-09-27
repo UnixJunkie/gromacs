@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="referencedata.xsl"?>
+<ReferenceData>
+  <Simulation Name="spc216">
+    <Energy Name="Kinetic En.">
+      <Real Name="Time 0.000000 Step 0 in frame 0">1635.4095497265887</Real>
+      <Real Name="Time 0.020000 Step 10 in frame 1">1683.4018775182012</Real>
+      <Real Name="Time 0.040000 Step 20 in frame 2">1678.0534792155054</Real>
+    </Energy>
+    <Energy Name="Potential">
+      <Real Name="Time 0.000000 Step 0 in frame 0">-8112.9365385295832</Real>
+      <Real Name="Time 0.020000 Step 10 in frame 1">-8160.0167108985524</Real>
+      <Real Name="Time 0.040000 Step 20 in frame 2">-8154.6275213475756</Real>
+    </Energy>
+  </Simulation>
+</ReferenceData>
