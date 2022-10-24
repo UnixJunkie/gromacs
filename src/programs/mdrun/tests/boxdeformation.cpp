@@ -81,6 +81,48 @@ class BoxDeformationTest :
 {
 };
 
+// Check that a system with Ekin=0 reports Ekin=0 under deformation
+TEST_F(BoxDeformationTest, flowDoesNotAffectEkin)
+{
+    // We use an LJ system with cut-off < sigma to have zero forces
+    std::string theMdpFile =
+            "coulombtype      = reaction-field\n"
+            "nstenergy        = 10\n"
+            "nstlist          = 10\n"
+            "verlet-buffer-tolerance = -1\n"
+            "rlist            = 0.33\n"
+            "rcoulomb         = 0.3\n"
+            "rvdw             = 0.3\n"
+            "dt               = 0.002\n"
+            "nsteps           = 0\n"
+            "gen-vel          = yes\n"
+            "gen-temp         = 0\n"
+            "deform           = 0 0 0 0 6e-2 0\n"
+            "deform-init-flow = yes\n";
+
+    const auto& simulationName = "argon12";
+
+    // Prepare the .tpr file
+    {
+        CommandLine caller;
+        runner_.useTopGroAndNdxFromDatabase(simulationName);
+        runner_.useStringAsMdpFile(theMdpFile);
+        EXPECT_EQ(0, runner_.callGrompp(caller));
+    }
+    // Do mdrun
+    {
+        CommandLine mdrunCaller;
+        ASSERT_EQ(0, runner_.callMdrun(mdrunCaller));
+        auto relativeTolerance = relativeToleranceAsFloatingPoint(0.01, GMX_DOUBLE ? 1e-6 : 1e-4);
+        EnergyTermsToCompare energyTermsToCompare{ { interaction_function[F_EKIN].longname,
+                                                     relativeTolerance } };
+        TestReferenceData    refData;
+        auto checker = refData.rootChecker().checkCompound("Simulation", simulationName);
+        checkEnergiesAgainstReferenceData(runner_.edrFileName_, energyTermsToCompare, &checker);
+    }
+}
+
+// Check that a deformed water box has correct Epot and Ekin
 TEST_F(BoxDeformationTest, EnergiesWithinTolerances)
 {
     // We force nstlist=10 to trigger put_atoms_in_box more often
