@@ -89,6 +89,7 @@ static void calc_ke_part_normal(const matrix                   deform,
                                 t_nrnb*                        nrnb,
                                 gmx_bool                       bEkinAveVel)
 {
+    matrix gmx_unused deformFlowMatrix;
     if constexpr (haveBoxDeformation)
     {
         GMX_ASSERT(ekind->systemMomenta, "Need system momenta with box deformation");
@@ -99,6 +100,16 @@ static void calc_ke_part_normal(const matrix                   deform,
             // grompp now does this check, but we could have read an old tpr file.
             gmx_fatal(FARGS,
                       "With box deformation a single temperature coupling group is required.");
+        }
+
+        // Form a matrix that we can use to multiply the coordinates with to obtain
+        // the flow at each coordinate
+        for (int d1 = 0; d1 < DIM; d1++)
+        {
+            for (int d2 = 0; d2 < DIM; d2++)
+            {
+                deformFlowMatrix[d1][d2] = deform[d2][d1] / box[d2][d2];
+            }
         }
     }
 
@@ -185,7 +196,7 @@ static void calc_ke_part_normal(const matrix                   deform,
                 // we compute below as well.
                 for (d = 0; (d < DIM); d++)
                 {
-                    vn[d] -= iprod(x[n], deform[d]) / box[d][d];
+                    vn[d] -= iprod(x[n], deformFlowMatrix[d]);
                 }
             }
 
