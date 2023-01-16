@@ -46,7 +46,7 @@ endif ()
 # installation that a GROMACS user might not explicitly want to use,
 # but which are searched for because MPI is an optional dependency of
 # gmxapi.
-if (GMXAPI AND NOT GMX_MPI AND NOT CMAKE_DISABLE_FIND_PACKAGE_MPI and NOT MPI_ALREADY_SEARCHED)
+if (GMXAPI AND NOT GMX_MPI AND NOT CMAKE_DISABLE_FIND_PACKAGE_MPI AND NOT MPI_ALREADY_SEARCHED)
     message(STATUS "GROMACS is being built without library MPI support (-DGMX_MPI=no). However "
         "MPI is potentially useful for the gmxapi Python API, so we will search for MPI anyway.  "
         "If this causes problems, disable the check with -DCMAKE_DISABLE_FIND_PACKAGE_MPI=on.")
