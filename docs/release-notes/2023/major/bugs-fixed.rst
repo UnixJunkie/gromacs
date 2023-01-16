@@ -63,6 +63,17 @@ resource management libraries like ``libfabric`` at unexpected times
 
 :issue:`4693`
 
+Document workardoun when MPI detection fails
+""""""""""""""""""""""""""""""""""""""""""""
+
+MPI is an optional dependency of gmxapi even when building GROMACS
+without support for an MPI library. CMake's mechanism to find MPI can
+choke on broken MPI installations in ways that could be confusing. Now
+a work-around is documented for the convenience of a user who was not
+intending to use MPI.
+
+:issue:`4699`
+
 Fail-safe check for perturbed exclusions beyond rlist
 """""""""""""""""""""""""""""""""""""""""""""""""""""
 
