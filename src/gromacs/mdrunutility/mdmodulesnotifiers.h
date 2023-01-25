@@ -49,6 +49,7 @@
 #include "gromacs/math/arrayrefwithpadding.h"
 #include "gromacs/math/vectypes.h"
 #include "gromacs/mdrunutility/mdmodulesnotifier.h"
+#include "gromacs/mdtypes/inputrec.h"
 
 struct t_commrec;
 struct gmx_mtop_t;
@@ -157,6 +158,28 @@ struct QMInputFileName
     bool hasQMInputFileName_ = false;
     //! The name of the QM Input file (.inp)
     std::string qmInputFileName_;
+};
+
+/*! \libinternal \brief Provides the constant ensemble temperature
+ *
+ * Check whether the constant ensemble temperature is available.
+ * Then, store the value as optional.
+ */
+struct EnsembleTemperature
+{
+    EnsembleTemperature(const t_inputrec& ir)
+    {
+        if (haveConstantEnsembleTemperature(ir))
+        {
+            constantEnsembleTemperature_ = std::make_optional(constantEnsembleTemperature(ir));
+        }
+        else
+        {
+            constantEnsembleTemperature_ = std::nullopt;
+        }
+    }
+    //! The constant ensemble temperature
+    std::optional<real> constantEnsembleTemperature_;
 };
 
 /*! \libinternal
@@ -325,7 +348,8 @@ struct MDModulesNotifiers
                            const PbcType&,
                            const SimulationTimeStep&,
                            const t_commrec&,
-                           const MdRunInputFilename&>::type simulationSetupNotifier_;
+                           const MdRunInputFilename&,
+                           const EnsembleTemperature&>::type simulationSetupNotifier_;
 };
 
 } // namespace gmx
