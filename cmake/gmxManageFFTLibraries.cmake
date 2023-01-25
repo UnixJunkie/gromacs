@@ -102,18 +102,20 @@ if(${GMX_FFT_LIBRARY} STREQUAL "FFTW3")
 
     set(FFT_LIBRARIES ${${FFTW}_LIBRARIES})
   elseif(${GMX_FFT_LIBRARY} STREQUAL "MKL")
-    if (TEST_MKL)
-        set(FIND_MKL_QUIETLY "QUIET")
+    find_path(MKLROOT "include/mkl.h" NO_DEFAULT_PATH HINTS ENV MKLROOT /opt/intel/oneapi/mkl/latest)
+    if(NOT MKLROOT)
+        message(FATAL_ERROR "Linking with MKL was requested but not found. Set MKLROOT.")
     endif()
-    set(MKL_THREADING sequential)
-    if (GMX_PREFER_STATIC_LIBS)
-        set(MKL_LINK static)
+    if (NOT TEST_MKL)
+        message(STATUS "Found MKL at ${MKLROOT}")
     endif()
-    find_package(MKL CONFIG REQUIRED ${FIND_MKL_QUIETLY} PATHS $ENV{MKLROOT})
+    add_library(MKL::MKL INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(MKL::MKL INTERFACE "mkl_intel_lp64;mkl_sequential;mkl_core")
+    target_link_directories(MKL::MKL INTERFACE "${MKLROOT}/lib/intel64")
+    target_include_directories(MKL::MKL INTERFACE "${MKLROOT}/include")
+
     set(FFT_LIBRARIES MKL::MKL)
-    #work-around for https://gitlab.kitware.com/cmake/cmake/-/issues/23844
-    get_target_property(_mkl_path MKL::MKL INTERFACE_INCLUDE_DIRECTORIES)
-    list(REMOVE_ITEM CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES "${_mkl_path}")
+
     # Check MKL works. If we were in a non-global scope, we wouldn't
     # have to play nicely.
     set(old_CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES}")
