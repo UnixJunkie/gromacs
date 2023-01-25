@@ -439,9 +439,11 @@ else()
     include(gmxManageFFTLibraries)
 
     if(GMX_GPU_FFT_MKL)
-        target_link_libraries(MKL::MKL INTERFACE "mkl_sycl;OpenCL")
+        find_library(mkl_sycl_PATH mkl_sycl PATHS "${MKLROOT}/lib/intel64")
+        list(APPEND GMX_EXTRA_LIBRARIES "${mkl_sycl_PATH};OpenCL")
+
         set(CMAKE_REQUIRED_FLAGS "${SYCL_TOOLCHAIN_CXX_FLAGS}")
-        set(CMAKE_REQUIRED_LIBRARIES "${FFT_LIBRARIES}")
+        set(CMAKE_REQUIRED_LIBRARIES "${GMX_EXTRA_LIBRARIES};${FFT_LIBRARIES}")
         check_cxx_source_compiles("
 #include <oneapi/mkl/dfti.hpp>
 int main() {
