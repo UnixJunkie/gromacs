@@ -45,6 +45,7 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 
 #include "gromacs/math/arrayrefwithpadding.h"
 #include "gromacs/math/vectypes.h"
