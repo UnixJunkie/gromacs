@@ -36,4 +36,4 @@ gmx_add_unit_test(NbnxmTests nbnxm-test
         exclusions.cpp
         kernelsetup.cpp
         )
-target_link_libraries(nbnxm-test PRIVATE nbnxm)
+target_link_libraries(nbnxm-test PRIVATE nbnxm simd timing)
