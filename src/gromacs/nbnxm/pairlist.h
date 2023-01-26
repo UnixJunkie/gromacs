@@ -37,7 +37,6 @@
 
 #include <cstddef>
 
-#include <array>
 #include <memory>
 #include <vector>
 
@@ -280,8 +279,7 @@ struct nbnxn_excl_t
     MSVC_DIAGNOSTIC_RESET
 
     //! Topology exclusion interaction bits per warp
-    // unsigned int pair[c_nbnxnGpuExclSize];
-    std::array<unsigned int, c_nbnxnGpuExclSize> pair;
+    unsigned int pair[c_nbnxnGpuExclSize];
 };
 
 //! Cluster pairlist type for use on CPUs

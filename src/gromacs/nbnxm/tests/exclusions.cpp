@@ -157,7 +157,6 @@ public:
 
     const NbnxnPairlistCpu& pairlist() const { return pairlistSet_->cpuLists()[0]; }
 
-public:
     int iClusterSize_;
     int jClusterSize_;
     int numAtoms_;
@@ -198,19 +197,19 @@ TEST_P(DiagonalExclusionsTest, CheckInteractionMask)
     }
 }
 
-const auto testParameterValues = ::testing::Values(Nbnxm::KernelType::Cpu4x4_PlainC
+const auto testKernelTypes = ::testing::Values(Nbnxm::KernelType::Cpu4x4_PlainC
 #ifdef GMX_NBNXN_SIMD_4XN
-                                                   ,
-                                                   Nbnxm::KernelType::Cpu4xN_Simd_4xN
+                                               ,
+                                               Nbnxm::KernelType::Cpu4xN_Simd_4xN
 #endif
 #ifdef GMX_NBNXN_SIMD_2XNN
 
-                                                   ,
-                                                   Nbnxm::KernelType::Cpu4xN_Simd_2xNN
+                                               ,
+                                               Nbnxm::KernelType::Cpu4xN_Simd_2xNN
 #endif
 );
 
-INSTANTIATE_TEST_SUITE_P(WithParameters, DiagonalExclusionsTest, testParameterValues);
+INSTANTIATE_TEST_SUITE_P(WithParameters, DiagonalExclusionsTest, testKernelTypes);
 
 } // namespace
 } // namespace test
