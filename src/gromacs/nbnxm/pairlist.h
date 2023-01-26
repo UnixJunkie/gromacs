@@ -37,6 +37,10 @@
 
 #include <cstddef>
 
+#include <array>
+#include <memory>
+#include <vector>
+
 #include "gromacs/gpu_utils/hostallocator.h"
 #include "gromacs/math/vectypes.h"
 #include "gromacs/mdtypes/locality.h"
@@ -276,7 +280,8 @@ struct nbnxn_excl_t
     MSVC_DIAGNOSTIC_RESET
 
     //! Topology exclusion interaction bits per warp
-    unsigned int pair[c_nbnxnGpuExclSize];
+    // unsigned int pair[c_nbnxnGpuExclSize];
+    std::array<unsigned int, c_nbnxnGpuExclSize> pair;
 };
 
 //! Cluster pairlist type for use on CPUs
