@@ -43,9 +43,9 @@
 #ifndef GMX_MDRUNUTILITY_MDMODULESNOTIFIERS_H
 #define GMX_MDRUNUTILITY_MDMODULESNOTIFIERS_H
 
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
 
 #include "gromacs/math/arrayrefwithpadding.h"
 #include "gromacs/math/vectypes.h"
