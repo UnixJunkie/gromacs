@@ -326,6 +326,21 @@ target_link_libraries(${exename} PRIVATE mdrun_test_infrastructure)
 target_link_libraries(${exename} PRIVATE legacy_modules)
 gmx_register_gtest_test(${testname} ${exename} OPENMP_THREADS 2 INTEGRATION_TEST IGNORE_LEAKS QUICK_GPU_TEST)
 
+# End-to-end test for enforced rotation ("rotational pulling") functionality
+set(testname "MdrunRotationTests")
+set(exename "mdrun-rotation-test")
+
+gmx_add_gtest_executable(${exename}
+        CPP_SOURCE_FILES
+        # files with code for tests
+        pull_rotation.cpp
+        # pseudo-library for code for mdrun
+        $<TARGET_OBJECTS:mdrun_objlib>
+)
+target_link_libraries(${exename} PRIVATE mdrun_test_infrastructure)
+target_link_libraries(${exename} PRIVATE legacy_modules)
+gmx_register_gtest_test(${testname} ${exename} OPENMP_THREADS 2 INTEGRATION_TEST IGNORE_LEAKS QUICK_GPU_TEST)
+
 # End-to-end tests comparing different simulator code paths
 set(testname "MdrunSimulatorComparison")
 set(exename "mdrun-simulator-comparison-test")
