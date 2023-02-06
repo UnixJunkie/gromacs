@@ -114,7 +114,7 @@ if(${GMX_FFT_LIBRARY} STREQUAL "FFTW3")
         target_link_libraries(MKL::MKL INTERFACE -Wl,--start-group) #only necessary for static but doesn't hurt otherwise. cmake 3.24 has LINK_GROUP
     endif()
     foreach(_lib mkl_core mkl_sequential mkl_intel_lp64)
-        find_library(${_lib}_PATH "${_lib}" PATHS "${MKLROOT}/lib/intel64")
+        find_library(${_lib}_PATH "${_lib}" PATHS "${MKLROOT}/lib/intel64" REQUIRED)
         target_link_libraries(MKL::MKL INTERFACE "${${_lib}_PATH}")
     endforeach()
     if(UNIX)
