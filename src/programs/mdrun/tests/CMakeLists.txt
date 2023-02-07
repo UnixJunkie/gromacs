@@ -337,6 +337,7 @@ gmx_add_gtest_executable(${exename}
         # pseudo-library for code for mdrun
         $<TARGET_OBJECTS:mdrun_objlib>
 )
+target_include_directories(${exename} PRIVATE ${PROJECT_SOURCE_DIR}/src/gromacs/math/include)
 target_link_libraries(${exename} PRIVATE mdrun_test_infrastructure)
 target_link_libraries(${exename} PRIVATE legacy_modules)
 gmx_register_gtest_test(${testname} ${exename} OPENMP_THREADS 2 INTEGRATION_TEST IGNORE_LEAKS QUICK_GPU_TEST)

@@ -72,6 +72,7 @@
 
 #include <gtest/gtest.h>
 
+#include "gromacs/fileio/xvgr.h"
 #include "gromacs/trajectory/energyframe.h"
 #include "gromacs/utility/fatalerror.h"
 
@@ -161,13 +162,11 @@ std::map<std::string, std::vector<std::vector<double>>> referenceForces = {
 
 void checkRotForcesAtStepZero(const std::string fn, const std::vector<std::vector<double>> reference)
 {
-    std::cout << "In checkRotForcesAtStepZero now\n";
     auto reader = TrajectoryFrameReader(fn);
     auto frame  = reader.frame();
     auto f      = frame.f();
 
-    std::cout << "Read frame " << frame.step() << " of " << fn << std::endl;
-
+    // std::cout << "Read frame " << frame.step() << " of " << fn << std::endl;
     for (int i = 0; i < 3; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -315,6 +314,8 @@ rot-potfit-step0         = 0.25
     ASSERT_EQ(0, runner_.callGrompp(gromppCaller));
 
     auto mdrunCaller = CommandLine();
+    auto fn_xvg      = fileManager_.getTemporaryFilePath("rotation.xvg");
+    mdrunCaller.addOption("-ro", fn_xvg);
     ASSERT_EQ(0, runner_.callMdrun(mdrunCaller));
 
     auto E_rot = getFirstRotEnergyValue(runner_.edrFileName_);
@@ -325,6 +326,16 @@ rot-potfit-step0         = 0.25
 
     // Check whether we get the expected forces for each of the rotation potentials:
     checkRotForcesAtStepZero(fn_trr, referenceForces[rotTypeString]);
+
+    // Check the torques that are computed on the fly and output to .xvg file
+    auto timeSeriesData = readXvgTimeSeries(fn_xvg, 0.0, 1.0);
+    const auto& step0Data = timeSeriesData.asConstView()[0];
+    EXPECT_EQ(step0Data[0], 0.004); // time (fs)
+    EXPECT_EQ(step0Data[1], 10); // theta_ref (degrees)
+    // EXPECT_REAL_EQ_TOL(step0Data[2], -13.5647, 1); // theta_av (degrees)
+    // EXPECT_EQ(step0Data[3], 4.112e+02); // tau (kJ/mol)
+    // Next test is redundant, but it does not hurt to make sure that E_rot in .xvg and .trr files are the same
+    //EXPECT_REAL_EQ_TOL(expectedEnergy, step0Data[4], absoluteTolerance(std::is_same_v<real, double> ? 1e-8 : 0.001));
 
     // auto map_fmm = getEnergyValueMap(runner_.edrFileName_);
     // fprintf(stderr, "\n\n--- FmmTest.FmmPeriodicBoundariesEnergy FMM all energies:\n");
