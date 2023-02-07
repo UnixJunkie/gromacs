@@ -63,7 +63,7 @@ resource management libraries like ``libfabric`` at unexpected times
 
 :issue:`4693`
 
-Document workardoun when MPI detection fails
+Document workaround when MPI detection fails
 """"""""""""""""""""""""""""""""""""""""""""
 
 MPI is an optional dependency of gmxapi even when building GROMACS
