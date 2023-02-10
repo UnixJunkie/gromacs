@@ -78,7 +78,6 @@
 
 #include "testutils/trajectoryreader.h"
 
-#include "energycomparison.h"
 #include "energyreader.h"
 #include "moduletest.h"
 #include "trajectorycomparison.h"
@@ -92,8 +91,9 @@ namespace
 
 //! Convenience type to provide test parameters as a single argument
 // 1st argument: mdp file entry for rotation potential type, e.g. 'iso', 'iso-pf', ...
-// 2nd argument: expected value for E_rot at first step
-typedef std::tuple<std::string, double> parameters;
+// 2nd argument: expected value for potential energy E_rot at first step
+// 3rd argument: expected value for torque tau at first step
+typedef std::tuple<std::string, double, double> parameters;
 
 
 std::map<std::string, std::vector<std::vector<double>>> referenceForces = {
@@ -180,28 +180,7 @@ void checkRotForcesAtStepZero(const std::string fn, const std::vector<std::vecto
     return;
 }
 
-
-//! Parameterized test fixture for enforced rotation
-class RotationTest : public MdrunTestFixture, public ::testing::WithParamInterface<parameters>
-{
-public:
-    /*! \brief Convenience method to get the enforced rotation potential energy of the first .edr frame
-     *
-     * Any following frames of the .edr file are ignored!
-     */
-    real getFirstRotEnergyValue(const std::string fn) const;
-
-    std::map<std::string, real> getEnergyValueMap(const std::string fn) const;
-
-    //! \brief Compares all frames of two trajectories
-    gmx_bool compareTrajectories(const std::string fn1, const std::string fn2, double absTolerance) const;
-
-    //! \brief Compares energy on a frame-by-frame basis for two energy files
-    gmx_bool compareEnergies(const std::string fn1, const std::string fn2, double absTolerance) const;
-};
-
-
-real RotationTest::getFirstRotEnergyValue(const std::string fn) const
+real getFirstRotEnergyValue(const std::string fn)
 {
     auto E   = 0.0;
     auto efr = openEnergyFileToReadTerms(fn, { "COM Pull En." });
@@ -217,23 +196,28 @@ real RotationTest::getFirstRotEnergyValue(const std::string fn) const
     return E;
 }
 
+//! Parameterized test fixture for enforced rotation
+class RotationTest : public MdrunTestFixture, public ::testing::WithParamInterface<parameters>
+{
+};
+
 //! Tests whether the rotation potentials yield the correct energy at step one
 //
 // All tests are for a four atom argon system.
 INSTANTIATE_TEST_SUITE_P(RotationPotentials,
                          RotationTest,
-                         ::testing::Values(parameters("iso", 1567.0459109),
-                                           parameters("iso-pf", 820.93248453),
-                                           parameters("pm", 929.18876803),
-                                           parameters("pm-pf", 572.0039131),
-                                           parameters("rm", 515.95322462),
-                                           parameters("rm-pf", 143.15040559),
-                                           parameters("rm2", 196.69333887),
-                                           parameters("rm2-pf", 42.345322053),
-                                           parameters("flex", 255.58915604),
-                                           parameters("flex-t", 114.13605288),
-                                           parameters("flex2", 170.6496809),
-                                           parameters("flex2-t", 101.11490074)));
+                         ::testing::Values(parameters("iso", 1567.0459109, -1033.7307213),
+                                           parameters("iso-pf", 820.93248453, -123.87809352),
+                                           parameters("pm", 929.18876803, -1033.7307213),
+                                           parameters("pm-pf", 572.0039131, -123.87809352),
+                                           parameters("rm", 515.95322462, -1595.3684936),
+                                           parameters("rm-pf", 143.15040559, 165.78560092),
+                                           parameters("rm2", 196.69333887, -1189.9052573),
+                                           parameters("rm2-pf", 42.345322053, -232.66325156),
+                                           parameters("flex", 255.58915604, -111.76617807),
+                                           parameters("flex-t", 114.13605288, 186.27588869),
+                                           parameters("flex2", 170.6496809, 142.13808477),
+                                           parameters("flex2-t", 101.11490074, 270.30162398)));
 
 
 TEST_P(RotationTest, CheckEnergy)
@@ -241,9 +225,13 @@ TEST_P(RotationTest, CheckEnergy)
     parameters testPar = GetParam();
 
     // Unpack:
-    auto rotTypeString                       = std::get<0>(testPar);
-    auto expectedEnergy                      = std::get<1>(testPar);
-    auto mdpStub                             = std::string(R"(
+    auto rotTypeString  = std::get<0>(testPar);
+    auto expectedEnergy = std::get<1>(testPar);
+    auto expectedTorque = std::get<2>(testPar);
+
+    SCOPED_TRACE(formatString("Checking enforced rotation for potential type '%s'", rotTypeString.c_str()));
+
+    auto mdpStub = std::string(R"(
 integrator               = md
 ; Start time and timestep in ps
 tinit                    = 0.002
@@ -303,21 +291,30 @@ rot-potfit-nsteps0       = 21
 ; For fit type 'potential', distance in degrees between two consecutive angles
 rot-potfit-step0         = 0.25
 )");
-    auto fn_trr                              = fileManager_.getTemporaryFilePath("rotation.trr");
-    runner_.fullPrecisionTrajectoryFileName_ = fn_trr;
-    runner_.useStringAsMdpFile(mdpStub + "rot_type0 = " + rotTypeString);
-    runner_.useTopGroAndNdxFromDatabase("argon4");
-    auto gromppCaller   = CommandLine();
-    auto rotrefFileName = std::filesystem::path(TestFileManager::getTestSimulationDatabaseDirectory())
-                                  .append("rotref.trr");
-    gromppCaller.addOption("-ref", rotrefFileName);
-    ASSERT_EQ(0, runner_.callGrompp(gromppCaller));
 
-    auto mdrunCaller = CommandLine();
-    auto fn_xvg      = fileManager_.getTemporaryFilePath("rotation.xvg");
-    mdrunCaller.addOption("-ro", fn_xvg);
-    ASSERT_EQ(0, runner_.callMdrun(mdrunCaller));
+    // Prepare the .tpr file
+    {
+        runner_.useStringAsMdpFile(mdpStub + "rot_type0 = " + rotTypeString);
+        runner_.useTopGroAndNdxFromDatabase("argon4");
+        auto gromppCaller = CommandLine();
+        auto rotrefFileName = std::filesystem::path(TestFileManager::getTestSimulationDatabaseDirectory())
+                                      .append("rotref.trr");
+        gromppCaller.addOption("-ref", rotrefFileName);
+        ASSERT_EQ(0, runner_.callGrompp(gromppCaller));
+    }
 
+    auto fn_trr = fileManager_.getTemporaryFilePath("rotation.trr");
+    auto fn_xvg = fileManager_.getTemporaryFilePath("rotation.xvg");
+
+    // Do mdrun
+    {
+        runner_.fullPrecisionTrajectoryFileName_ = fn_trr;
+        auto mdrunCaller                         = CommandLine();
+        mdrunCaller.addOption("-ro", fn_xvg);
+        ASSERT_EQ(0, runner_.callMdrun(mdrunCaller));
+    }
+
+    // Check output values against references
     auto E_rot = getFirstRotEnergyValue(runner_.edrFileName_);
     fprintf(stderr, "\nE_rot = %f\n\n", E_rot);
 
@@ -327,22 +324,18 @@ rot-potfit-step0         = 0.25
     // Check whether we get the expected forces for each of the rotation potentials:
     checkRotForcesAtStepZero(fn_trr, referenceForces[rotTypeString]);
 
-    // Check the torques that are computed on the fly and output to .xvg file
-    auto timeSeriesData = readXvgTimeSeries(fn_xvg, 0.0, 1.0);
-    const auto& step0Data = timeSeriesData.asConstView()[0];
-    EXPECT_EQ(step0Data[0], 0.004); // time (fs)
-    EXPECT_EQ(step0Data[1], 10); // theta_ref (degrees)
-    // EXPECT_REAL_EQ_TOL(step0Data[2], -13.5647, 1); // theta_av (degrees)
-    // EXPECT_EQ(step0Data[3], 4.112e+02); // tau (kJ/mol)
+    // Check the torques and other diagnostic values that are computed on the fly and stored in the .xvg file
+    auto        timeSeriesData = readXvgTimeSeries(fn_xvg, 0.0, 1.0);
+    const auto& step0Data      = timeSeriesData.asConstView()[0];
+    EXPECT_EQ(step0Data[0], 0.002); // time (fs)
+    EXPECT_EQ(step0Data[1], 5.000); // theta_ref (degrees)
+    // As we only write out 3-4 digits to the .xvg file, we cannot use the same tight tolerances
+    // we might get from .edr file
+    EXPECT_REAL_EQ_TOL(
+            expectedTorque, step0Data[3], relativeToleranceAsFloatingPoint(expectedEnergy, 1e-3));
     // Next test is redundant, but it does not hurt to make sure that E_rot in .xvg and .trr files are the same
-    //EXPECT_REAL_EQ_TOL(expectedEnergy, step0Data[4], absoluteTolerance(std::is_same_v<real, double> ? 1e-8 : 0.001));
-
-    // auto map_fmm = getEnergyValueMap(runner_.edrFileName_);
-    // fprintf(stderr, "\n\n--- FmmTest.FmmPeriodicBoundariesEnergy FMM all energies:\n");
-
-    // for(const auto& it : map_fmm) {
-    //     fprintf(stderr, "%s = %f\n", it.first.c_str(), it.second);
-    // }
+    EXPECT_REAL_EQ_TOL(
+            expectedEnergy, step0Data[4], relativeToleranceAsFloatingPoint(expectedEnergy, 1e-3));
 }
 
 } // namespace
