@@ -73,11 +73,14 @@
 #include <gtest/gtest.h>
 
 #include "gromacs/fileio/xvgr.h"
+#include "gromacs/topology/ifunc.h"
 #include "gromacs/trajectory/energyframe.h"
 #include "gromacs/utility/fatalerror.h"
 
+#include "testutils/refdata.h"
 #include "testutils/trajectoryreader.h"
 
+#include "energycomparison.h"
 #include "energyreader.h"
 #include "moduletest.h"
 #include "trajectorycomparison.h"
@@ -183,11 +186,11 @@ void checkRotForcesAtStepZero(const std::string fn, const std::vector<std::vecto
 real getFirstRotEnergyValue(const std::string fn)
 {
     auto E   = 0.0;
-    auto efr = openEnergyFileToReadTerms(fn, { "COM Pull En." });
+    auto efr = openEnergyFileToReadTerms(fn, { interaction_function[F_COM_PULL].longname });
     if (efr->readNextFrame())
     {
         auto fr = efr->frame();
-        E       = fr.at("COM Pull En.");
+        E       = fr.at(interaction_function[F_COM_PULL].longname);
     }
     else
     {
@@ -204,7 +207,7 @@ class RotationTest : public MdrunTestFixture, public ::testing::WithParamInterfa
 //! Tests whether the rotation potentials yield the correct energy at step one
 //
 // All tests are for a four atom argon system.
-INSTANTIATE_TEST_SUITE_P(RotationPotentials,
+INSTANTIATE_TEST_SUITE_P(RotationWorks,
                          RotationTest,
                          ::testing::Values(parameters("iso", 1567.0459109, -1033.7307213),
                                            parameters("iso-pf", 820.93248453, -123.87809352),
@@ -220,7 +223,7 @@ INSTANTIATE_TEST_SUITE_P(RotationPotentials,
                                            parameters("flex2-t", 101.11490074, 270.30162398)));
 
 
-TEST_P(RotationTest, CheckEnergy)
+TEST_P(RotationTest, CheckEnergiesForcesAndTraj)
 {
     parameters testPar = GetParam();
 
@@ -240,12 +243,13 @@ nsteps                   = 25
 coulombtype              = Cut-off
 pbc                      = xyz
 comm-mode                = Linear
-nstvout                  = 25
-nstfout                  = 25
+nstxout                  = 4
+nstvout                  = 0
+nstfout                  = 4
 ; Output frequency for energies to log file and energy file
 nstlog                   = 25
-nstcalcenergy            = 1
-nstenergy                = 1
+nstcalcenergy            = 5
+nstenergy                = 5
 ; Output frequency and precision for .xtc file
 nstxout-compressed       = 100
 compressed-x-precision   = 1000
@@ -292,7 +296,7 @@ rot-potfit-nsteps0       = 21
 rot-potfit-step0         = 0.25
 )");
 
-    // Prepare the .tpr file
+    // Prepare the simulation input .tpr file
     {
         runner_.useStringAsMdpFile(mdpStub + "rot_type0 = " + rotTypeString);
         runner_.useTopGroAndNdxFromDatabase("argon4");
@@ -306,7 +310,7 @@ rot-potfit-step0         = 0.25
     auto fn_trr = fileManager_.getTemporaryFilePath("rotation.trr");
     auto fn_xvg = fileManager_.getTemporaryFilePath("rotation.xvg");
 
-    // Do mdrun
+    // Do a short 25-step MD simulation
     {
         runner_.fullPrecisionTrajectoryFileName_ = fn_trr;
         auto mdrunCaller                         = CommandLine();
@@ -314,30 +318,60 @@ rot-potfit-step0         = 0.25
         ASSERT_EQ(0, runner_.callMdrun(mdrunCaller));
     }
 
-    // Check output values against references
-    auto E_rot = getFirstRotEnergyValue(runner_.edrFileName_);
-    fprintf(stderr, "\nE_rot = %f\n\n", E_rot);
+    // Check energies, forces etc. at step 0 against references computed from a Mathematica notebook:
+    {
+        // Check output values against references
+        auto E_rot = getFirstRotEnergyValue(runner_.edrFileName_);
+        fprintf(stderr, "\nE_rot = %f\n\n", E_rot);
 
-    EXPECT_REAL_EQ_TOL(
-            expectedEnergy, E_rot, absoluteTolerance(std::is_same_v<real, double> ? 1e-8 : 0.001));
+        EXPECT_REAL_EQ_TOL(
+                expectedEnergy, E_rot, absoluteTolerance(std::is_same_v<real, double> ? 1e-8 : 0.001));
 
-    // Check whether we get the expected forces for each of the rotation potentials:
-    checkRotForcesAtStepZero(fn_trr, referenceForces[rotTypeString]);
+        // Check whether we get the expected forces for each of the rotation potentials:
+        checkRotForcesAtStepZero(fn_trr, referenceForces[rotTypeString]);
 
-    // Check the torques and other diagnostic values that are computed on the fly and stored in the .xvg file
-    auto        timeSeriesData = readXvgTimeSeries(fn_xvg, 0.0, 1.0);
-    const auto& step0Data      = timeSeriesData.asConstView()[0];
-    EXPECT_EQ(step0Data[0], 0.002); // time (fs)
-    EXPECT_EQ(step0Data[1], 5.000); // theta_ref (degrees)
-    // As we only write out 3-4 digits to the .xvg file, we cannot use the same tight tolerances
-    // we might get from .edr file
-    EXPECT_REAL_EQ_TOL(
-            expectedTorque, step0Data[3], relativeToleranceAsFloatingPoint(expectedEnergy, 1e-3));
-    // Next test is redundant, but it does not hurt to make sure that E_rot in .xvg and .trr files are the same
-    EXPECT_REAL_EQ_TOL(
-            expectedEnergy, step0Data[4], relativeToleranceAsFloatingPoint(expectedEnergy, 1e-3));
+        // Check the torques and other diagnostic values that are computed on the fly and stored in the .xvg file
+        auto        timeSeriesData = readXvgTimeSeries(fn_xvg, 0.0, 1.0);
+        const auto& step0Data      = timeSeriesData.asConstView()[0];
+        EXPECT_EQ(step0Data[0], 0.002); // time (fs)
+        EXPECT_EQ(step0Data[1], 5.000); // theta_ref (degrees)
+        // As we only write out 3-4 digits to the .xvg file, we cannot use the same tight tolerances
+        // we might get from .edr file
+        EXPECT_REAL_EQ_TOL(
+                expectedTorque, step0Data[3], relativeToleranceAsFloatingPoint(expectedEnergy, 1e-3));
+        // Next test is redundant, but it does not hurt to make sure that E_rot in .xvg and .trr files are the same
+        EXPECT_REAL_EQ_TOL(
+                expectedEnergy, step0Data[4], relativeToleranceAsFloatingPoint(expectedEnergy, 1e-3));
+    }
+
+    // Compare the produced 25-step trajectory to the reference trajectory:
+    {
+        auto energyTolerance = absoluteTolerance(std::is_same_v<real, double> ? 1e-8 : 0.01);
+
+        EnergyTermsToCompare energyTermsToCompare{
+            { { interaction_function[F_COM_PULL].longname, energyTolerance },
+              { interaction_function[F_EPOT].longname, energyTolerance } }
+        };
+        TestReferenceData refData;
+        auto              checker = refData.rootChecker();
+        checkEnergiesAgainstReferenceData(runner_.edrFileName_, energyTermsToCompare, &checker);
+
+        // Specify how trajectory frame matching must work.
+        const TrajectoryFrameMatchSettings trajectoryMatchSettings{ true,  // box
+                                                                    false, // no need to handle PBC
+                                                                    false, // no need to handle PBC
+                                                                    ComparisonConditions::MustCompare,  // x
+                                                                    ComparisonConditions::NoComparison, // v
+                                                                    ComparisonConditions::MustCompare,  // f
+                                                                    MaxNumFrames::compareAllFrames() };
+        TrajectoryTolerances trajectoryTolerances = TrajectoryComparison::s_defaultTrajectoryTolerances;
+        // Build the functor that will compare reference and test
+        // trajectory frames in the chosen way.
+        TrajectoryComparison trajectoryComparison{ trajectoryMatchSettings, trajectoryTolerances };
+
+        checkTrajectoryAgainstReferenceData(fn_trr, trajectoryComparison, &checker);
+    }
 }
-
 } // namespace
 } // namespace test
 } // namespace gmx
