@@ -236,64 +236,32 @@ TEST_P(RotationTest, CheckEnergiesForcesAndTraj)
 
     auto mdpStub = std::string(R"(
 integrator               = md
-; Start time and timestep in ps
 tinit                    = 0.002
 dt                       = 0.002
 nsteps                   = 25
 coulombtype              = Cut-off
-pbc                      = xyz
-comm-mode                = Linear
 nstxout                  = 4
-nstvout                  = 0
 nstfout                  = 4
-; Output frequency for energies to log file and energy file
-nstlog                   = 25
 nstcalcenergy            = 5
 nstenergy                = 5
-; Output frequency and precision for .xtc file
-nstxout-compressed       = 100
-compressed-x-precision   = 1000
 nstlist                  = 5
 rlist                    = 0.4
 rvdw                     = 0.4
 rcoulomb                 = 0.4
 Tcoupl                   = no
 Pcoupl                   = no
-gen_vel                  = no
-gen_temp                 = 0
-constraints              = none
-; ENFORCED ROTATION    
-; Enforced rotation: No or Yes
+gen-vel                  = no
 rotation                 = yes
-; Output frequency for angle, torque and rotation potential energy for the whole group
 rot_nstrout              = 1
-; Output frequency for per-slab data (angles, torques and slab centers)
 rot-nstsout              = 1
-; Number of rotation groups
-rot-ngroups              = 1
-; Rotation group name   
 rot-group0               = system
-; Use mass-weighting of the rotation group positions
 rot-massw0               = yes
-; Rotation vector, will get normalized
 rot-vec0                 = 1.0 2.0 3.0
-; Pivot point for the potentials iso, pm, rm, and rm2 (nm)
 rot-pivot0               = 4 5 4
-; Rotation rate (degree/ps) and force constant (kJ/(mol*nm^2))
 rot-rate0                = 2500
 rot-k0                   = 1000
-; Slab distance for flexible axis rotation (nm)
-rot-slab-dist0           = 1.5
-; Minimum value of Gaussian function for the force to be evaluated (for flex* potentials)
 rot-min-gauss0           = 1.0e-12
-; Value of additive constant epsilon' (nm^2) for rm2* and flex2* potentials
 rot-eps0                 = 0.01
-; Fitting method to determine angle of rotation group (rmsd, norm, or potential)
-rot-fit-method0          = rmsd
-; For fit type 'potential', nr. of angles around the reference for which the pot. is evaluated
-rot-potfit-nsteps0       = 21
-; For fit type 'potential', distance in degrees between two consecutive angles
-rot-potfit-step0         = 0.25
 )");
 
     // Prepare the simulation input .tpr file
