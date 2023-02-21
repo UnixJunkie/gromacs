@@ -1,7 +1,7 @@
 /*
  * This file is part of the GROMACS molecular simulation package.
  *
- * Copyright 2022- The GROMACS Authors
+ * Copyright 2023- The GROMACS Authors
  * and the project initiators Erik Lindahl, Berk Hess and David van der Spoel.
  * Consult the AUTHORS/COPYING files and https://www.gromacs.org for details.
  *
@@ -36,10 +36,10 @@
  * \brief
  * Tests for mdrun enforced rotation (rotational pulling) functionality.
  *
- * These tests check the mdrun results for cases where any of the enforced
- * rotation potentials (see the corresponding section in the manual) are
- * switched on. For a simple rotation group of 4 atoms with these atomic
- * positions (.gro format)
+ * These tests check the mdrun results for cases where one of the rotation
+ * potentials (see the corresponding section in the manual) is turned on.
+ * For a small rotation group of 4 atoms with the followin atomic positions
+ * (.gro format):
  *
  *     4
  *     1AR      AR    1   1.500   1.500   3.200
@@ -48,7 +48,7 @@
  *     4AR      AR    4   5.500   4.000   6.600
  *     8.000 8.000 8.000
  *
- * and these positions of the reference
+ * and these positions of the reference group:
  *
  *     4
  *     1AR      AR    1   1.000   2.000   3.000
@@ -57,13 +57,17 @@
  *     4AR      AR    4   5.000   4.500   7.000
  *     8.000 8.000 8.000
  *
- * the tests for the potential types iso, iso-pf, pm, pm-pf, rm, rm-pf,
- * rm2, rm2-pf, flex, flex-t, flex2, and flex2-t check the energies and forces
- * from the rotation potential for a simple 5 degree rotation against the
- * results obtained from a Mathematica notebook. Since the cutoffs are small,
- * the forces calculated at step zero will stem exclusively from the rotation
- * potential. The forces in the first frame of the .trr output files should
- * therefore be identical to the Mathematica results.
+ * the tests for the iso, iso-pf, pm, pm-pf, rm, rm-pf, rm2, rm2-pf, flex, flex-t,
+ * flex2 and flex2-t potential types check the energies and forces from each
+ * rotational potential for a 5 degree rotation against the results obtained
+ * from a Mathematica notebook. As the cut-offs are small, the forces calculated
+ * at step zero are from the rotational potential only. The forces in the first
+ * frame of the .trr output files should therefore be identical to the Mathematica
+ * results.
+ *
+ * In addition to the test described above, which checks energies and forces
+ * at time step 0, a second test compares a short 25-step trajectory to reference
+ * data with slightly looser tolerances.
  *
  * \author Carsten Kutzner <ckutzne@gwdg.de>
  * \ingroup module_mdrun_integration_tests
@@ -98,7 +102,8 @@ namespace
 // 3rd argument: expected value for torque tau at first step
 typedef std::tuple<std::string, double, double> parameters;
 
-
+//! This map lists for each rotation potential ("iso", "iso-pf", ...) the forces
+// on the 4 atoms resulting from a 5 degree rotation against the reference
 std::map<std::string, std::vector<std::vector<double>>> referenceForces = {
     { { "iso",
         { { -131.51692692, 127.41828586, -54.439881601 },
@@ -163,26 +168,27 @@ std::map<std::string, std::vector<std::vector<double>>> referenceForces = {
 };
 
 
+//! Compare the forces at the first step to the reference
 void checkRotForcesAtStepZero(const std::string fn, const std::vector<std::vector<double>> reference)
 {
     auto reader = TrajectoryFrameReader(fn);
     auto frame  = reader.frame();
     auto f      = frame.f();
 
-    // std::cout << "Read frame " << frame.step() << " of " << fn << std::endl;
-    for (int i = 0; i < 3; i++)
+    // Loop over all 4 atoms of the system
+    for (size_t i = 0; i < 4; i++)
     {
-        for (int j = 0; j < 3; j++)
+        // Loop over x, y, and z entry of the forces
+        for (size_t j = 0; j < 3; j++)
         {
             EXPECT_REAL_EQ_TOL(f[i][j],
                                reference[i][j],
                                absoluteTolerance(std::is_same_v<real, double> ? 1e-7 : 1e-3));
         }
     }
-
-    return;
 }
 
+//! Return the first entry for the rotational energy stored in the .edr file
 real getFirstRotEnergyValue(const std::string fn)
 {
     auto E   = 0.0;
@@ -204,7 +210,7 @@ class RotationTest : public MdrunTestFixture, public ::testing::WithParamInterfa
 {
 };
 
-//! Tests whether the rotation potentials yield the correct energy at step one
+//! Tests to see if the rotation potentials are giving the correct energies and forces
 //
 // All tests are for a four atom argon system.
 INSTANTIATE_TEST_SUITE_P(RotationWorks,
@@ -234,35 +240,34 @@ TEST_P(RotationTest, CheckEnergiesForcesAndTraj)
 
     SCOPED_TRACE(formatString("Checking enforced rotation for potential type '%s'", rotTypeString.c_str()));
 
-    auto mdpStub = std::string(R"(
-integrator               = md
-tinit                    = 0.002
-dt                       = 0.002
-nsteps                   = 25
-coulombtype              = Cut-off
-nstxout                  = 4
-nstfout                  = 4
-nstcalcenergy            = 5
-nstenergy                = 5
-nstlist                  = 5
-rlist                    = 0.4
-rvdw                     = 0.4
-rcoulomb                 = 0.4
-Tcoupl                   = no
-Pcoupl                   = no
-gen-vel                  = no
-rotation                 = yes
-rot_nstrout              = 1
-rot-nstsout              = 1
-rot-group0               = system
-rot-massw0               = yes
-rot-vec0                 = 1.0 2.0 3.0
-rot-pivot0               = 4 5 4
-rot-rate0                = 2500
-rot-k0                   = 1000
-rot-min-gauss0           = 1.0e-12
-rot-eps0                 = 0.01
-)");
+    auto mdpStub = formatString(
+            "integrator     = md          \n"
+            "tinit          = 0.002       \n"
+            "dt             = 0.002       \n"
+            "nsteps         = 25          \n"
+            "coulombtype    = Cut-off     \n"
+            "nstxout        = 4           \n"
+            "nstfout        = 4           \n"
+            "nstcalcenergy  = 5           \n"
+            "nstenergy      = 5           \n"
+            "nstlist        = 5           \n"
+            "rlist          = 0.4         \n"
+            "rvdw           = 0.4         \n"
+            "rcoulomb       = 0.4         \n"
+            "Tcoupl         = no          \n"
+            "Pcoupl         = no          \n"
+            "gen-vel        = no          \n"
+            "rotation       = yes         \n"
+            "rot_nstrout    = 1           \n"
+            "rot-nstsout    = 1           \n"
+            "rot-group0     = system      \n"
+            "rot-massw0     = yes         \n"
+            "rot-vec0       = 1.0 2.0 3.0 \n"
+            "rot-pivot0     = 4 5 4       \n"
+            "rot-rate0      = 2500        \n"
+            "rot-k0         = 1000        \n"
+            "rot-min-gauss0 = 1.0e-12     \n"
+            "rot-eps0       = 0.01        \n");
 
     // Prepare the simulation input .tpr file
     {
@@ -314,6 +319,7 @@ rot-eps0                 = 0.01
 
     // Compare the produced 25-step trajectory to the reference trajectory:
     {
+        // Compare energies
         auto energyTolerance = absoluteTolerance(std::is_same_v<real, double> ? 1e-8 : 0.01);
 
         EnergyTermsToCompare energyTermsToCompare{
@@ -324,17 +330,17 @@ rot-eps0                 = 0.01
         auto              checker = refData.rootChecker();
         checkEnergiesAgainstReferenceData(runner_.edrFileName_, energyTermsToCompare, &checker);
 
-        // Specify how trajectory frame matching must work.
+        // Compare positions and forces
+
+        // Specify how trajectory frame matching must work
         const TrajectoryFrameMatchSettings trajectoryMatchSettings{ true,  // box
                                                                     false, // no need to handle PBC
                                                                     false, // no need to handle PBC
-                                                                    ComparisonConditions::MustCompare,  // x
+                                                                    ComparisonConditions::MustCompare, // x
                                                                     ComparisonConditions::NoComparison, // v
-                                                                    ComparisonConditions::MustCompare,  // f
+                                                                    ComparisonConditions::MustCompare, // f
                                                                     MaxNumFrames::compareAllFrames() };
         TrajectoryTolerances trajectoryTolerances = TrajectoryComparison::s_defaultTrajectoryTolerances;
-        // Build the functor that will compare reference and test
-        // trajectory frames in the chosen way.
         TrajectoryComparison trajectoryComparison{ trajectoryMatchSettings, trajectoryTolerances };
 
         checkTrajectoryAgainstReferenceData(fn_trr, trajectoryComparison, &checker);
