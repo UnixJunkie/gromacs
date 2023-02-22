@@ -168,7 +168,7 @@ std::map<std::string, std::vector<std::vector<double>>> referenceForces = {
 
 
 //! Compare the forces at the first step to the reference
-void checkRotForcesAtStepZero(const std::string fn, const std::vector<std::vector<double>> reference)
+void checkRotForcesAtStepZero(const std::string& fn, const std::vector<std::vector<double>>& reference)
 {
     auto reader = TrajectoryFrameReader(fn);
     auto frame  = reader.frame();
@@ -188,7 +188,7 @@ void checkRotForcesAtStepZero(const std::string fn, const std::vector<std::vecto
 }
 
 //! Return the first entry for the rotational energy stored in the .edr file
-real getFirstRotEnergyValue(const std::string fn)
+real getFirstRotEnergyValue(const std::string& fn)
 {
     auto E   = 0.0;
     auto efr = openEnergyFileToReadTerms(fn, { interaction_function[F_COM_PULL].longname });
