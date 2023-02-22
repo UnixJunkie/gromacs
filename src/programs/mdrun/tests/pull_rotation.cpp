@@ -102,8 +102,7 @@ namespace
 // 3rd argument: expected value for torque tau at first step
 typedef std::tuple<std::string, double, double> parameters;
 
-//! This map lists for each rotation potential ("iso", "iso-pf", ...) the forces
-// on the 4 atoms resulting from a 5 degree rotation against the reference
+//! Reference forces per potential resulting from a 5 degree rotation
 std::map<std::string, std::vector<std::vector<double>>> referenceForces = {
     { { "iso",
         { { -131.51692692, 127.41828586, -54.439881601 },
@@ -280,58 +279,68 @@ TEST_P(RotationTest, CheckEnergiesForcesAndTraj)
         ASSERT_EQ(0, runner_.callGrompp(gromppCaller));
     }
 
-    auto fn_trr = fileManager_.getTemporaryFilePath("rotation.trr");
     auto fn_xvg = fileManager_.getTemporaryFilePath("rotation.xvg");
 
-    // Do a short 25-step MD simulation
+    // Do a short MD simulation
     {
-        runner_.fullPrecisionTrajectoryFileName_ = fn_trr;
-        auto mdrunCaller                         = CommandLine();
+        auto mdrunCaller = CommandLine();
         mdrunCaller.addOption("-ro", fn_xvg);
         ASSERT_EQ(0, runner_.callMdrun(mdrunCaller));
     }
 
-    // Check energies, forces etc. at step 0 against references computed from a Mathematica notebook:
+
+    /******************************************************/
+    /* Check computed values at step 0 against references */
+    /* obtained from a Mathematica notebook               */
+    /******************************************************/
+
+    // Check energies
     {
-        // Check output values against references
         auto E_rot = getFirstRotEnergyValue(runner_.edrFileName_);
-        fprintf(stderr, "\nE_rot = %f\n\n", E_rot);
 
         EXPECT_REAL_EQ_TOL(
                 expectedEnergy, E_rot, absoluteTolerance(std::is_same_v<real, double> ? 1e-8 : 0.001));
+    }
 
-        // Check whether we get the expected forces for each of the rotation potentials:
-        checkRotForcesAtStepZero(fn_trr, referenceForces[rotTypeString]);
+    // Check forces
+    checkRotForcesAtStepZero(runner_.fullPrecisionTrajectoryFileName_, referenceForces[rotTypeString]);
 
-        // Check the torques and other diagnostic values that are computed on the fly and stored in the .xvg file
+    // Check the torques and other values written to .xvg file
+    {
         auto        timeSeriesData = readXvgTimeSeries(fn_xvg, 0.0, 1.0);
         const auto& step0Data      = timeSeriesData.asConstView()[0];
         EXPECT_EQ(step0Data[0], 0.002); // time (fs)
         EXPECT_EQ(step0Data[1], 5.000); // theta_ref (degrees)
-        // As we only write out 3-4 digits to the .xvg file, we cannot use the same tight tolerances
-        // we might get from .edr file
+        // As we only write out a few digits to the .xvg file, we cannot use the same tight
+        // tolerances we get from .edr
         EXPECT_REAL_EQ_TOL(
                 expectedTorque, step0Data[3], relativeToleranceAsFloatingPoint(expectedEnergy, 1e-3));
-        // Next test is redundant, but it does not hurt to make sure that E_rot in .xvg and .trr files are the same
+        // Next test is somewhat redundant, but it does check whether the correct values actually end up in the .xvg file
         EXPECT_REAL_EQ_TOL(
                 expectedEnergy, step0Data[4], relativeToleranceAsFloatingPoint(expectedEnergy, 1e-3));
     }
 
-    // Compare the produced 25-step trajectory to the reference trajectory:
+
+    /******************************************************/
+    /* Now compare computed values to a short reference   */
+    /* trajectory                                         */
+    /******************************************************/
+    TestReferenceData refData;
+    auto              checker = refData.rootChecker();
+
+    // Compare energies for .edr time series
     {
-        // Compare energies
         auto energyTolerance = absoluteTolerance(std::is_same_v<real, double> ? 1e-8 : 0.01);
 
         EnergyTermsToCompare energyTermsToCompare{
             { { interaction_function[F_COM_PULL].longname, energyTolerance },
               { interaction_function[F_EPOT].longname, energyTolerance } }
         };
-        TestReferenceData refData;
-        auto              checker = refData.rootChecker();
         checkEnergiesAgainstReferenceData(runner_.edrFileName_, energyTermsToCompare, &checker);
+    }
 
-        // Compare positions and forces
-
+    // Compare positions and forces for .trr time series
+    {
         // Specify how trajectory frame matching must work
         const TrajectoryFrameMatchSettings trajectoryMatchSettings{ true,  // box
                                                                     false, // no need to handle PBC
@@ -343,7 +352,8 @@ TEST_P(RotationTest, CheckEnergiesForcesAndTraj)
         TrajectoryTolerances trajectoryTolerances = TrajectoryComparison::s_defaultTrajectoryTolerances;
         TrajectoryComparison trajectoryComparison{ trajectoryMatchSettings, trajectoryTolerances };
 
-        checkTrajectoryAgainstReferenceData(fn_trr, trajectoryComparison, &checker);
+        checkTrajectoryAgainstReferenceData(
+                runner_.fullPrecisionTrajectoryFileName_, trajectoryComparison, &checker);
     }
 }
 } // namespace
