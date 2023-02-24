@@ -116,6 +116,7 @@ void initHaloData(RVec* x, const int numHomeAtoms, const int numAtomsTotal)
  * \param [in] dd             Domain decomposition object
  * \param [in] box            Box matrix
  * \param [in] h_x            Atom coordinate data array on host
+ * \param [in] numHomeAtoms   Number of home atoms
  * \param [in] numAtomsTotal  Total number of atoms, including halo
  */
 void gpuHalo(gmx_domdec_t* dd, matrix box, HostVector<RVec>* h_x, int numHomeAtoms, int numAtomsTotal)
