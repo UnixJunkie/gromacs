@@ -187,6 +187,7 @@ void gpuHalo(gmx_domdec_t* dd, matrix box, HostVector<RVec>* h_x, int numHomeAto
     GMX_UNUSED_VALUE(dd);
     GMX_UNUSED_VALUE(box);
     GMX_UNUSED_VALUE(h_x);
+    GMX_UNUSED_VALUE(numHomeAtoms);
     GMX_UNUSED_VALUE(numAtomsTotal);
 #endif
 }
