@@ -1,3 +1,117 @@
 [build-system]
-requires = ["cmake>=3.16", "mpi4py", "pybind11>=2.6", "setuptools>=42.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["mpi4py", "pybind11>=2.6", "scikit-build-core", "wheel"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "gmxapi"
+version = "0.4.1"
+description = "gmxapi Python interface for GROMACS."
+readme = "README.rst"
+license = { text = "GNU LESSER GENERAL PUBLIC LICENSE" }
+requires-python = ">=3.7"
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)"
+]
+authors = [
+    { name="GROMACS gmxapi team", email="info@gmxapi.org" },
+]
+dependencies = [
+    "mpi4py",
+    "packaging",
+    "networkx>=2.0",
+    "numpy>1.7"
+]
+
+[project.urls]
+homepage = "http://gmxapi.org/"
+"Bug tracker" = "https://gitlab.com/gromacs/gromacs/-/issues/?label_name[]=gmxapi%3A%3APython"
+documentation = "https://manual.gromacs.org/current/gmxapi/index.html"
+# The repository does not have any of the markers that identify it as a Python package.
+#repository = "https://gitlab.com/gromacs/gromacs.git"
+
+
+[tool.scikit-build]
+# The PEP 517 build hooks will add ninja and/or cmake if the versions on the
+# system are not at least these versions. Disabled by an empty string.
+cmake.minimum-version = "3.18.4"
+ninja.minimum-version = "1.5"
+
+# Fallback on gmake/make if available and ninja is missing (Unix). Will only
+# fallback on platforms without a known ninja wheel.
+ninja.make-fallback = true
+
+# Extra args for CMake. Pip, unlike build, does not support lists, so semicolon
+# can be used to separate. Setting this in config or envvar will override the
+# entire list. See also cmake.define.
+cmake.args = []
+
+# This activates verbose builds
+cmake.verbose = false
+
+# This controls the CMake build type
+cmake.build-type = "Release"
+
+# Display logs at or above this level.
+logging.level = "WARNING"
+
+# Include and exclude patterns, in gitignore syntax. Include overrides exclude.
+# Wheels include packages included in the sdist; CMake has the final say.
+sdist.include = [
+    "CMakeLists.txt",
+    "LICENSE",
+    "README.rst",
+    "pyproject.toml",
+    "src/cpp",
+    "src/gmxapi/*.py",
+    "src/gmxapi/*/*.py",
+    "src/gmxapi/*/gmxconfig.json.in",
+    "test/pytest.ini",
+    "test/testdata.json",
+    "test/*.py",
+]
+sdist.exclude = ["*"]
+
+# Make reproducible SDists (Python 3.9+ and UNIX recommended). Respects
+# SOURCE_DATE_EPOCH when true (the default).
+sdist.reproducible = true
+
+# The root-level packages to include. Special default: if not given, the package
+# is auto-discovered if it's name matches the main name.
+wheel.packages = ["src/gmxapi", "test"]
+
+# Setting py-api to "cp37" would build ABI3 wheels for Python 3.7+.  If CPython
+# is less than this value, or on PyPy, this will be ignored.  Setting the api to
+# "py3" or "py2.py3" would build wheels that don't depend on Python (ctypes,
+# etc).
+wheel.py-api = ""
+
+# Setting this to true will expand tags (universal2 will add Intel and Apple
+# Silicon tags, for pip <21.0.1 compatibility).
+wheel.expand-macos-universal-tags = false
+
+# This allows you to change the install dir, such as to the package name. The
+# original dir is still at SKBUILD_PLATLIB_DIR (also SKBUILD_DATA_DIR, etc. are
+# available)
+#wheel.install-dir = "."
+
+# This will backport an internal copy of FindPython if CMake is less than this
+# value. Set to 0 or the empty string to disable. The default will be kept in
+# sync with the version of FindPython stored in scikit-build-core.
+backport.find-python = "3.26"
+
+# Enable experimental features if any are available
+experimental = false
+
+# Strictly validate config options
+strict-config = true
+
+# This provides some backward compatibility if set. Defaults to the latest
+# scikit-build-core version.
+minimum-version = "0.2"  # current version
+
+# Build directory (empty will use a temporary directory). {cache_tag} is
+# available to provide a unique directory per interpreter.
+build-dir = ""
+
+[tool.scikit-build.cmake.define]
+# Put CMake defines in this table.
