@@ -26,7 +26,7 @@ set -e
 pushd python_packaging/gmxapi
   # Make sure to delete any accidentally lingering build artifacts.
   rm -rf build dist
-  python -m pip install --upgrade scikit-build-core
+  python -m pip install --upgrade scikit-build-core[pyproject]
   # Build and install the gmxapi Python package.
   # Use the documented mechanism for getting GROMACS installation and build system hints.
   # See docs/gmxapi/userguide/install.rst and docs/release-notes/2022/major/portability.rst
