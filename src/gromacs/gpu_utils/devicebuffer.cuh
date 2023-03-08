@@ -54,6 +54,10 @@
 #include "gromacs/utility/gmxassert.h"
 #include "gromacs/utility/stringutil.h"
 
+#if GMX_NVSHMEM
+#    include <nvshmem.h>
+#endif
+
 /*! \brief
  * Allocates a device-side buffer.
  * It is currently a caller's responsibility to call it only on not-yet allocated buffers.
@@ -398,5 +402,89 @@ ValueType* asMpiPointer(DeviceBuffer<ValueType>& buffer)
 {
     return buffer;
 }
+
+#if GMX_NVSHMEM
+
+/*! \brief
+ * Allocates a NVSHMEM buffer.
+ * It is currently a caller's responsibility to call it only on not-yet allocated buffers.
+ *
+ * \tparam        ValueType            Raw value type of the \p buffer.
+ * \param[in,out] buffer               Pointer to the nvshmem buffer.
+ * \param[in]     numValues            Number of values to accommodate.
+ * \param[in]     deviceContext        The buffer's dummy device  context - not managed explicitly in CUDA RT.
+ */
+template<typename ValueType>
+void allocateDeviceBufferNvShmem(DeviceBuffer<ValueType>* buffer,
+                                 size_t                   numValues,
+                                 const DeviceContext& /* deviceContext */)
+{
+    GMX_ASSERT(buffer, "needs a buffer pointer");
+    *buffer = (ValueType*)nvshmem_malloc(numValues * sizeof(ValueType));
+
+    GMX_RELEASE_ASSERT(*buffer != nullptr, "Allocation of the nvshmem buffer failed.");
+}
+
+/*! \brief
+ * Frees a NVSHMEM buffer.
+ * This does not reset separately stored size/capacity integers,
+ * as this is planned to be a destructor of DeviceBuffer as a proper class,
+ * and no calls on \p buffer should be made afterwards.
+ *
+ * \param[in] buffer  Pointer to the buffer to free.
+ */
+template<typename DeviceBuffer>
+void freeDeviceBufferNvShmem(DeviceBuffer* buffer)
+{
+    GMX_ASSERT(buffer, "needs a buffer pointer");
+    if (*buffer)
+    {
+        nvshmem_free(*buffer);
+    }
+}
+
+/*! \brief
+ *  Reallocates the NVSHMEM buffer.
+ *
+ *  Reallocates the NVSHMEM memory pointed by \p buffer.
+ *  Allocation is buffered and therefore freeing is only needed
+ *  if the previously allocated space is not enough.
+ *  \p currentNumValues and \p currentMaxNumValues are updated.
+ *  TODO: \p currentNumValues, \p currentMaxNumValues, \p deviceContext
+ *  should all be encapsulated in a host-side class together with the buffer.
+ *
+ *  \tparam        ValueType            Raw value type of the \p buffer.
+ *  \param[in,out] buffer               Pointer to the NVSHMEM buffer
+ *  \param[in]     numValues            Number of values to accommodate.
+ *  \param[in,out] currentNumValues     The pointer to the buffer's number of values.
+ *  \param[in,out] currentMaxNumValues  The pointer to the buffer's capacity.
+ *  \param[in]     deviceContext        The buffer's device context.
+ */
+template<typename ValueType>
+void reallocateDeviceBufferNvShmem(DeviceBuffer<ValueType>* buffer,
+                                   size_t                   numValues,
+                                   int*                     currentNumValues,
+                                   int*                     currentMaxNumValues,
+                                   const DeviceContext&     deviceContext)
+{
+    GMX_ASSERT(buffer, "needs a buffer pointer");
+    GMX_ASSERT(currentNumValues, "needs a size pointer");
+    GMX_ASSERT(currentMaxNumValues, "needs a capacity pointer");
+
+    /* reallocate only if the data does not fit */
+    if (static_cast<int>(numValues) > *currentMaxNumValues)
+    {
+        if (*currentMaxNumValues >= 0)
+        {
+            freeNvshmemBuffer(buffer);
+        }
+
+        *currentMaxNumValues = over_alloc_large(numValues);
+        allocateNvshmemBuffer(buffer, *currentMaxNumValues, deviceContext);
+    }
+    /* size could have changed without actual reallocation */
+    *currentNumValues = numValues;
+}
+#endif
 
 #endif

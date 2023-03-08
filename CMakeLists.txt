@@ -315,6 +315,14 @@ if (GMX_GPU)
         set("GMX_GPU_FFT_${_gpu_fft_library_upper}" "${_value}" CACHE INTERNAL "Use ${_gpu_fft_library} library for FFTs on GPUs")
     endforeach()
 endif()
+gmx_dependent_option(GMX_NVSHMEM "Build a parallel NVSHMEM multi-GPU code of GROMACS" OFF "GMX_GPU STREQUAL CUDA;GMX_MPI")
+
+if (GMX_NVSHMEM)
+    set(GMX_NVSHMEM_HOME $ENV{NVSHMEM_HOME} CACHE PATH "path to NVSHMEM")
+    if (GMX_NVSHMEM_HOME STREQUAL "")
+        message( FATAL_ERROR "NVSHMEM_HOME env variable must be defined if GMX_NVSHMEM is set")
+    endif()
+endif()
 
 gmx_dependent_cache_variable(GMX_SIMD_REF_FLOAT_WIDTH  "Reference SIMD single precision width" STRING "4" "GMX_SIMD STREQUAL REFERENCE")
 gmx_dependent_cache_variable(GMX_SIMD_REF_DOUBLE_WIDTH "Reference SIMD double precision width" STRING "2" "GMX_SIMD STREQUAL REFERENCE")
@@ -777,6 +785,9 @@ if(GMX_USE_CUFFTMP)
     find_package(cuFFTMp REQUIRED CUDA)
     set(GMX_USE_cuFFTMp ${cuFFTMp_FOUND})
 endif()
+
+# Set NVSHMEM host and device libs
+include(gmxManageNvshmem)
 
 if(WIN32)
     set(GMX_NATIVE_WINDOWS 1)

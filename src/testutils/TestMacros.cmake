@@ -121,7 +121,7 @@ endfunction ()
 #     All the other C++ .cpp source files needed only with neither OpenCL nor CUDA nor SYCL
 function (gmx_add_gtest_executable EXENAME)
     if (GMX_BUILD_UNITTESTS AND BUILD_TESTING)
-        set(_options MPI HARDWARE_DETECTION DYNAMIC_REGISTRATION)
+        set(_options MPI NVSHMEM HARDWARE_DETECTION DYNAMIC_REGISTRATION)
         set(_multi_value_keywords
             CPP_SOURCE_FILES
             CUDA_CU_SOURCE_FILES
@@ -158,7 +158,19 @@ function (gmx_add_gtest_executable EXENAME)
                  TEST_USES_DYNAMIC_REGISTRATION=true)
         endif()
 
-        if (GMX_GPU_CUDA AND NOT GMX_CLANG_CUDA)
+        if (ARG_NVSHMEM AND GMX_NVSHMEM)
+            enable_language(CUDA)
+            add_executable(${EXENAME} ${UNITTEST_TARGET_OPTIONS}
+                ${ARG_CPP_SOURCE_FILES}
+                ${ARG_CUDA_CU_SOURCE_FILES}
+                ${ARG_GPU_CPP_SOURCE_FILES})
+            set_target_properties(${EXENAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+            set_target_properties(${EXENAME} PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+            target_link_libraries(${EXENAME} PRIVATE nvshmem_host_lib nvshmem_device_lib)
+            # disable CUDA_ARCHITECTURES to use gencode info from GMX_CUDA_NVCC_GENCODE_FLAGS
+            set_target_properties(${EXENAME}  PROPERTIES CUDA_ARCHITECTURES OFF)
+            target_compile_options(${EXENAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${GMX_CUDA_NVCC_GENCODE_FLAGS}>)
+        elseif (GMX_GPU_CUDA AND NOT GMX_CLANG_CUDA)
             # Work around FindCUDA that prevents using target_link_libraries()
             # with keywords otherwise...
             set(CUDA_LIBRARIES PRIVATE ${CUDA_LIBRARIES})
@@ -337,8 +349,15 @@ endfunction()
 
 function (gmx_add_mpi_unit_test NAME EXENAME RANKS)
     cmake_parse_arguments(ARG "HARDWARE_DETECTION" "" "" ${ARGN})
+    set(_nvshmem_enable "")
+    if (GMX_NVSHMEM)
+        cmake_parse_arguments(ARG "NVSHMEM" "" "" ${ARGN})
+        if (ARG_NVSHMEM)
+            set(_nvshmem_enable "NVSHMEM")
+        endif()
+    endif()
     if (GMX_MPI OR (GMX_THREAD_MPI AND GTEST_IS_THREADSAFE))
-        gmx_add_gtest_executable(${EXENAME} MPI ${ARGN})
+        gmx_add_gtest_executable(${EXENAME} MPI ${_nvshmem_enable} ${ARGN})
         set(_test_labels "")
         if (ARG_HARDWARE_DETECTION)
             # All unit tests should be quick, so mark them as QUICK_GPU_TEST if they use GPU
@@ -347,3 +366,4 @@ function (gmx_add_mpi_unit_test NAME EXENAME RANKS)
         gmx_register_gtest_test(${NAME} ${EXENAME} ${_test_labels} MPI_RANKS ${RANKS})
     endif()
 endfunction()
+
