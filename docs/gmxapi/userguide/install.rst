@@ -494,15 +494,27 @@ The "pyproject.toml" tabs is for package maintainers.)
 
 If you have a single |Gromacs| installation at :file:`/path/to/gromacs`, it is usually
 sufficient to provide this location to :command:`pip` through the :envvar:`gmxapi_ROOT`
-environment variable.
+environment variable, or as a CMake variable definition. CMake definitions can be
+passed through the CMAKE_ARGS environment variable or with command line arguments to
+the package builder.
 
-Example::
+.. tab:: environment
 
-    gmxapi_ROOT=/path/to/gromacs pip install --no-cache-dir gmxapi
+    .. code-block:: shell
 
-Note that this is equivalent to providing the CMake variable definition::
+        gmxapi_ROOT=/path/to/gromacs pip install --no-cache-dir gmxapi
 
-    CMAKE_ARGS="-Dgmxapi_ROOT=/path/to/gromacs" pip install --no-cache-dir gmxapi
+.. tab:: CMAKE_ARGS
+
+    .. code-block:: shell
+
+        CMAKE_ARGS="-Dgmxapi_ROOT=/path/to/gromacs" pip install --no-cache-dir gmxapi
+
+.. tab:: pip argument
+
+    .. code-block:: shell
+
+        pip install --no-cache-dir gmxapi --config-setting=cmake.define.gmxapi_ROOT=/path/to/gromacs
 
 .. rubric:: |Gromacs| CMake hints
 
