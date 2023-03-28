@@ -387,12 +387,11 @@ endif()
 if (GMXAPI_MAIN_PROJECT)
     set_target_properties(_gmxapi PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
     set_target_properties(_gmxapi PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
-    # The Python setup.py sets CMAKE_LIBRARY_OUTPUT_DIRECTORY and will be looking for generated files there.
-#    file(COPY ${CMAKE_CURRENT_BINARY_DIR}/src/gmxapi/gmxconfig.json
-#         DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
     # Install phase does not affect sdist. Only wheel.
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/gmxapi/gmxconfig.json DESTINATION ${SKBUILD_PROJECT_NAME})
     install(TARGETS _gmxapi DESTINATION ${SKBUILD_PLATLIB_DIR}/${SKBUILD_PROJECT_NAME})
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/gmxapi/ DESTINATION ${SKBUILD_PLATLIB_DIR}/${SKBUILD_PROJECT_NAME}
+            FILES_MATCHING PATTERN "*.py")
 else()
     # The rest of the logic in this conditional is to support the GMX_PYTHON_PACKAGE option
     # for testing the gmxapi Python packages within a full GROMACS project build_command and.

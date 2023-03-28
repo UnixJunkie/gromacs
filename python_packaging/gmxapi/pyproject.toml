@@ -77,7 +77,7 @@ sdist.reproducible = true
 
 # The root-level packages to include. Special default: if not given, the package
 # is auto-discovered if it's name matches the main name.
-wheel.packages = ["src/gmxapi", "test"]
+wheel.packages = []
 
 # Setting py-api to "cp37" would build ABI3 wheels for Python 3.7+.  If CPython
 # is less than this value, or on PyPy, this will be ignored.  Setting the api to
