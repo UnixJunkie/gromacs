@@ -554,13 +554,8 @@ of the ``pip install`` command line.
           --config-settings=cmake.define.gmxapi_ROOT=${UNIQUE_PREFIX} \
           --config-settings=cmake.args=-C${UNIQUE_PREFIX}/share/cmake/gromacs${SUFFIX}/gromacs-hints${SUFFIX}.cmake
 
-.. tab:: pip 23.1+
-
-    .. code-block:: shell
-
-        pip install gmxapi \
-          -Ccmake.define.gmxapi_ROOT=${UNIQUE_PREFIX} \
-          -Ccmake.args=-C${UNIQUE_PREFIX}/share/cmake/gromacs${SUFFIX}/gromacs-hints${SUFFIX}.cmake
+.. seealso:: `scikit-build-core config-settings
+             <https://scikit-build-core.readthedocs.io/en/latest/configuration.html#configuring-cmake-arguments-and-defines>`__
 
 
 Install from source
