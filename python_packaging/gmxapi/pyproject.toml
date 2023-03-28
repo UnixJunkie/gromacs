@@ -64,7 +64,7 @@ sdist.include = [
     "src/cpp",
     "src/gmxapi/*.py",
     "src/gmxapi/*/*.py",
-    "src/gmxapi/*/gmxconfig.json.in",
+    "src/gmxapi/gmxconfig.json.in",
     "test/pytest.ini",
     "test/testdata.json",
     "test/*.py",
