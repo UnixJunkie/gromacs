@@ -65,16 +65,16 @@ public:
      * Prior to domain decomposition, local atom indices are global atom indices
      * and the collective index runs from 0..numberOfAtoms-1.
      * local and collective indices will be updated in setLocalAndCollectiveIndices
-     * to match domain decompostion if domain decomposition is performed.
+     * to match domain decomposition if domain decomposition is performed.
      *
      * \todo remove this constructor once all indices are represented
-     *       as gmx::index instead of int.
+     *       as gmx::Index instead of int.
      *
-     * \note Not created if the internal int type does match gmx::index
+     * \note Not created if the internal int type does match gmx::Index
      *
      * \param[in] globalAtomIndex Indices of the atoms to be managed
      */
-    template<typename T = void, typename U = std::enable_if_t<!std::is_same_v<int, index>, T>>
+    template<typename T = void, typename U = std::enable_if_t<!std::is_same_v<int, Index>, T>>
     explicit LocalAtomSetData(ArrayRef<const int> globalAtomIndex) :
         globalIndex_(globalAtomIndex.begin(), globalAtomIndex.end()),
         localIndex_(globalAtomIndex.begin(), globalAtomIndex.end())
@@ -88,11 +88,11 @@ public:
      * Prior to domain decomposition, local atom indices are global atom indices
      * and the collective index runs from 0..numberOfAtoms-1.
      * local and collective indices will be updated in setLocalAndCollectiveIndices
-     * to match domain decompostion if domain decomposition is performed.
+     * to match domain decomposition if domain decomposition is performed.
      *
      * \param[in] globalAtomIndex Indices of the atoms to be managed
      */
-    explicit LocalAtomSetData(ArrayRef<const index> globalAtomIndex);
+    explicit LocalAtomSetData(ArrayRef<const Index> globalAtomIndex);
 
     /*! \brief Sets the local and collective indices from a lookup in ga2la.
      *

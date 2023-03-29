@@ -21,7 +21,7 @@ Questions regarding |Gromacs| installation
    the main simulation engine :ref:`mdrun <gmx mdrun>`. Generally that
    is desirable when running on a multi-node cluster, and necessary
    when using multi-simulation algorithms. Usually also installing a
-   build of GROMACS configured without MPI is convenient for users.
+   build of |Gromacs| configured without MPI is convenient for users.
 
 
 #. Should my version be compiled using double precision?
@@ -81,7 +81,7 @@ Questions concerning system preparation and preprocessing
    You don't need to prepare additional files if you already have all :ref:`itp` and :ref:`top` files prepared through other tools.
 
    Examples for those are `CHARMM-GUI <http://www.charmm-gui.org/>`__, `ATB (Automated Topology Builder) <https://atb.uq.edu.au/>`__,
-   `pmx <http://pmx.mpibpc.mpg.de/instructions.html>`__. and `PRODRG <http://davapc1.bioch.dundee.ac.uk/cgi-bin/prodrg>`__.
+   `pmx <http://pmx.mpibpc.mpg.de/instructions.html>`__, and `PRODRG <http://davapc1.bioch.dundee.ac.uk/cgi-bin/prodrg>`__.
 
 #. How can I build in missing atoms?
 

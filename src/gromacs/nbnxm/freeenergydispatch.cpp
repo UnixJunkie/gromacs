@@ -135,6 +135,15 @@ void nonbonded_verlet_t::setupFepThreadedForceBuffer(const int numAtomsForce)
 namespace
 {
 
+//! Returns whether soft-core interactions are used
+bool haveSoftCore(const interaction_const_t::SoftCoreParameters& scParams)
+{
+    return (scParams.softcoreType == SoftcoreType::Beutler
+            && (scParams.alphaCoulomb != 0 || scParams.alphaVdw != 0))
+           || (scParams.softcoreType == SoftcoreType::Gapsys
+               && (scParams.gapsysScaleLinpointCoul != 0 || scParams.gapsysScaleLinpointVdW != 0));
+}
+
 void dispatchFreeEnergyKernel(gmx::ArrayRef<const std::unique_ptr<t_nblist>>   nbl_fep,
                               const gmx::ArrayRefWithPadding<const gmx::RVec>& coords,
                               bool                                             useSimd,
@@ -178,7 +187,7 @@ void dispatchFreeEnergyKernel(gmx::ArrayRef<const std::unique_ptr<t_nblist>>   n
                "Number of lists should be same as number of NB threads");
 
 #pragma omp parallel for schedule(static) num_threads(nbl_fep.ssize())
-    for (gmx::index th = 0; th < nbl_fep.ssize(); th++)
+    for (gmx::Index th = 0; th < nbl_fep.ssize(); th++)
     {
         try
         {
@@ -224,7 +233,7 @@ void dispatchFreeEnergyKernel(gmx::ArrayRef<const std::unique_ptr<t_nblist>>   n
     /* If we do foreign lambda and we have soft-core interactions
      * we have to recalculate the (non-linear) energies contributions.
      */
-    if (fepvals->n_lambda > 0 && stepWork.computeDhdl && fepvals->sc_alpha != 0)
+    if (fepvals->n_lambda > 0 && stepWork.computeDhdl && haveSoftCore(*ic.softCoreParameters))
     {
         gmx::StepWorkload stepWorkForeignEnergies = stepWork;
         stepWorkForeignEnergies.computeForces     = false;
@@ -235,7 +244,7 @@ void dispatchFreeEnergyKernel(gmx::ArrayRef<const std::unique_ptr<t_nblist>>   n
         const int kernelFlags = (donb_flags & ~(GMX_NONBONDED_DO_FORCE | GMX_NONBONDED_DO_SHIFTFORCE))
                                 | GMX_NONBONDED_DO_FOREIGNLAMBDA;
 
-        for (gmx::index i = 0; i < 1 + enerd->foreignLambdaTerms.numLambdas(); i++)
+        for (gmx::Index i = 0; i < 1 + enerd->foreignLambdaTerms.numLambdas(); i++)
         {
             std::fill(std::begin(dvdl_nb), std::end(dvdl_nb), 0);
             for (int j = 0; j < static_cast<int>(FreeEnergyPerturbationCouplingType::Count); j++)
@@ -244,7 +253,7 @@ void dispatchFreeEnergyKernel(gmx::ArrayRef<const std::unique_ptr<t_nblist>>   n
             }
 
 #pragma omp parallel for schedule(static) num_threads(nbl_fep.ssize())
-            for (gmx::index th = 0; th < nbl_fep.ssize(); th++)
+            for (gmx::Index th = 0; th < nbl_fep.ssize(); th++)
             {
                 try
                 {
@@ -293,11 +302,7 @@ void dispatchFreeEnergyKernel(gmx::ArrayRef<const std::unique_ptr<t_nblist>>   n
             std::array<real, F_NRE> foreign_term = { 0 };
             sum_epot(*foreignGroupPairEnergies, foreign_term.data());
             // Accumulate the foreign energy difference and dV/dlambda into the passed enerd
-            enerd->foreignLambdaTerms.accumulate(
-                    i,
-                    foreign_term[F_EPOT],
-                    dvdl_nb[FreeEnergyPerturbationCouplingType::Vdw]
-                            + dvdl_nb[FreeEnergyPerturbationCouplingType::Coul]);
+            enerd->foreignLambdaTerms.accumulate(i, foreign_term[F_EPOT], dvdl_nb);
         }
     }
 }
@@ -370,7 +375,7 @@ void FreeEnergyDispatch::dispatchFreeEnergyKernels(const PairlistSets& pairlistS
             // With a non-empty pairlist we do this in dispatchFreeEnergyKernel()
             // to avoid the overhead of an extra openMP parallel loop
 #pragma omp parallel for schedule(static) num_threads(fepPairlists.ssize())
-            for (gmx::index th = 0; th < fepPairlists.ssize(); th++)
+            for (gmx::Index th = 0; th < fepPairlists.ssize(); th++)
             {
                 try
                 {
@@ -389,7 +394,7 @@ void FreeEnergyDispatch::dispatchFreeEnergyKernels(const PairlistSets& pairlistS
 
     threadedForceBuffer_.reduce(forceWithShiftForces, nullptr, &enerd->grpp, dvdl_nb, stepWork, 0);
 
-    if (fepvals->sc_alpha != 0)
+    if (haveSoftCore(*ic.softCoreParameters))
     {
         enerd->dvdl_nonlin[FreeEnergyPerturbationCouplingType::Vdw] +=
                 dvdl_nb[FreeEnergyPerturbationCouplingType::Vdw];

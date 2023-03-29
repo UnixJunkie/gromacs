@@ -2897,7 +2897,7 @@ static void do_tpx_state_first(gmx::ISerializer* serializer, TpxFileHeader* tpx,
 {
     if (serializer->reading())
     {
-        state->flags = 0;
+        state->setFlags(0);
         init_gtc_state(state, tpx->ngtc, 0, 0);
     }
     do_test(serializer, tpx->bBox, state->box);
@@ -3000,13 +3000,13 @@ static void do_tpx_state_second(gmx::ISerializer* serializer, TpxFileHeader* tpx
             // of the tpx file.
             if (tpx->bX)
             {
-                state->flags |= enumValueToBitMask(StateEntry::X);
+                state->addEntry(StateEntry::X);
             }
             if (tpx->bV)
             {
-                state->flags |= enumValueToBitMask(StateEntry::V);
+                state->addEntry(StateEntry::V);
             }
-            state_change_natoms(state, tpx->natoms);
+            state->changeNumAtoms(tpx->natoms);
         }
     }
 
@@ -3020,7 +3020,7 @@ static void do_tpx_state_second(gmx::ISerializer* serializer, TpxFileHeader* tpx
     {
         if (serializer->reading())
         {
-            state->flags |= enumValueToBitMask(StateEntry::X);
+            state->addEntry(StateEntry::X);
         }
         serializer->doRvecArray(x, tpx->natoms);
     }
@@ -3030,7 +3030,7 @@ static void do_tpx_state_second(gmx::ISerializer* serializer, TpxFileHeader* tpx
     {
         if (serializer->reading())
         {
-            state->flags |= enumValueToBitMask(StateEntry::V);
+            state->addEntry(StateEntry::V);
         }
         if (!v)
         {
@@ -3046,7 +3046,7 @@ static void do_tpx_state_second(gmx::ISerializer* serializer, TpxFileHeader* tpx
     // No need to run do_test when the last argument is NULL
     if (tpx->bF)
     {
-        std::vector<gmx::RVec> dummyForces(state->natoms);
+        std::vector<gmx::RVec> dummyForces(state->numAtoms());
         serializer->doRvecArray(as_rvec_array(dummyForces.data()), tpx->natoms);
     }
 }
@@ -3228,14 +3228,14 @@ static void close_tpx(t_fileio* fio)
 static TpxFileHeader populateTpxHeader(const t_state& state, const t_inputrec* ir, const gmx_mtop_t* mtop)
 {
     TpxFileHeader header;
-    header.natoms         = state.natoms;
+    header.natoms         = state.numAtoms();
     header.ngtc           = state.ngtc;
     header.fep_state      = state.fep_state;
     header.lambda         = state.lambda[FreeEnergyPerturbationCouplingType::Fep];
     header.bIr            = ir != nullptr;
     header.bTop           = mtop != nullptr;
-    header.bX             = (state.flags & enumValueToBitMask(StateEntry::X)) != 0;
-    header.bV             = (state.flags & enumValueToBitMask(StateEntry::V)) != 0;
+    header.bX             = state.hasEntry(StateEntry::X);
+    header.bV             = state.hasEntry(StateEntry::V);
     header.bF             = false;
     header.bBox           = true;
     header.fileVersion    = tpx_version;

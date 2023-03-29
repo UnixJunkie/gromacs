@@ -69,6 +69,7 @@ import argparse
 import collections
 import collections.abc
 import copy
+import os
 import packaging.version
 import shlex
 import typing
@@ -294,6 +295,7 @@ def get_llvm_packages(args) -> typing.Iterable[str]:
             packages += [
                 f"llvm-{args.llvm}-dev",
                 f"libclang-{args.llvm}-dev",
+                f"libclang-rt-{args.llvm}-dev",
                 f"lld-{args.llvm}",
             ]
         return packages
@@ -364,9 +366,15 @@ def get_compiler(
             compiler = compiler_build_stage.runtime(_from="oneapi")
             # Prepare the toolchain (needed only for builds done within the Dockerfile, e.g.
             # OpenMPI builds, which don't currently work for other reasons)
+            oneapi_version_major = int(args.oneapi.split(".")[0])
+            if oneapi_version_major < 2023:
+                path = f"/opt/intel/oneapi/compiler/{args.oneapi}/linux/bin/intel64"
+            else:
+                path = f"/opt/intel/oneapi/compiler/{args.oneapi}/linux/bin"
+
             oneapi_toolchain = hpccm.toolchain(
-                CC=f"/opt/intel/oneapi/compiler/{args.oneapi}/linux/bin/intel64/icx",
-                CXX=f"/opt/intel/oneapi/compiler/{args.oneapi}/linux/bin/intel64/icpx",
+                CC=f"{path}/icx",
+                CXX=f"{path}/icpx",
             )
             setattr(compiler, "toolchain", oneapi_toolchain)
 
@@ -417,9 +425,9 @@ def get_ucx(args, compiler, gdrcopy):
             # We disable `-Werror`, since there are some unknown pragmas and unused variables which upset clang
             toolchain = copy.copy(compiler.toolchain)
             toolchain.CFLAGS = "-Wno-error"
-            # Version last updated July 15, 2022
+            # Version last updated January 24, 2023
             return hpccm.building_blocks.ucx(
-                toolchain=toolchain, gdrcopy=use_gdrcopy, version="1.13.0", cuda=True
+                toolchain=toolchain, gdrcopy=use_gdrcopy, version="1.13.1", cuda=True
             )
         else:
             raise RuntimeError("compiler is not an HPCCM compiler building block!")
@@ -485,6 +493,37 @@ def get_mpi(args, compiler, ucx):
             raise RuntimeError("Requested unknown MPI implementation.")
     else:
         return None
+
+
+def get_oneapi_plugins(args):
+    # To get this token, register at https://developer.codeplay.com/ and generate new API token on the "Setting" page.
+    # Then place the toke in this environment variable when building the container.
+    token = os.getenv("CODEPLAY_API_TOKEN")
+    blocks = []
+
+    def _add_plugin(variant):
+        if args.oneapi is None:
+            raise RuntimeError("Cannot install oneAPI plugins without oneAPI.")
+        if token is None:
+            raise RuntimeError(
+                "Need CODEPLAY_API_TOKEN env. variable to install oneAPI plugins"
+            )
+        url = f"https://developer.codeplay.com/api/v1/products/download?product=oneapi&filters[]=linux&variant={variant}&aat={token}"
+        outfile = f"/tmp/oneapi_plugin_{variant}.sh"
+        blocks.append(
+            hpccm.primitives.shell(
+                commands=[
+                    f"wget --content-disposition '{url}' --output-document '{outfile}'",
+                    f"bash '{outfile}' --yes",
+                ]
+            )
+        )
+
+    if args.oneapi_plugin_nvidia:
+        _add_plugin("nvidia")
+    if args.oneapi_plugin_amd:
+        _add_plugin("amd")
+    return blocks
 
 
 def get_clfft(args):
@@ -565,14 +604,20 @@ def get_hipsycl(args):
             f"sed s/_OPENMP/__OPENMP_NVPTX__/ -i /usr/lib/llvm-{args.llvm}/lib/clang/*/include/__clang_cuda_complex_builtins.h",
         ]
 
+    hipsycl_version_opts = {}
+    if "." in args.hipsycl:
+        hipsycl_version_opts["branch"] = "v" + args.hipsycl
+    else:
+        hipsycl_version_opts["commit"] = args.hipsycl
+
     return hpccm.building_blocks.generic_cmake(
         repository="https://github.com/illuhad/hipSYCL.git",
         directory="/var/tmp/hipSYCL",
         prefix="/usr/local",
         recursive=True,
-        commit=args.hipsycl,
         cmake_opts=["-DCMAKE_BUILD_TYPE=Release", *cmake_opts],
         postinstall=postinstall,
+        **hipsycl_version_opts,
     )
 
 
@@ -1181,6 +1226,8 @@ def build_stages(args) -> typing.Iterable["hpccm.Stage"]:
                 f'echo "CUDA Version {cuda_version_str}" > /usr/local/cuda/version.txt'
             ]
         )
+
+    building_blocks["oneapi_plugins"] = get_oneapi_plugins(args)
 
     building_blocks["clfft"] = get_clfft(args)
 

@@ -205,7 +205,6 @@ if(GMX_SYCL_HIPSYCL)
         endif()
     endif()
 
-
     if(GMX_GPU_FFT_VKFFT)
         include(gmxManageVkFft)
         if (GMX_HIPSYCL_HAVE_CUDA_TARGET)
@@ -427,10 +426,22 @@ else()
         endif()
     endif()
 
+    if(GMX_GPU_FFT_VKFFT)
+        include(gmxManageVkFft)
+        if ("${SYCL_CXX_FLAGS_EXTRA}" MATCHES "fsycl-targets=.*nvptx64")
+            gmx_manage_vkfft("CUDA")
+        else()
+            message(FATAL_ERROR "VkFFT can only be used with CUDA backend")
+        endif()
+        set(_sycl_has_valid_fft TRUE)
+    endif()
+
     include(gmxManageFFTLibraries)
 
     if(GMX_GPU_FFT_MKL)
-        list(APPEND GMX_EXTRA_LIBRARIES "mkl_sycl;OpenCL")
+        if(MKL_VERSION VERSION_LESS "2023.0.0")
+            list(APPEND GMX_EXTRA_LIBRARIES "mkl_sycl;OpenCL")
+        endif()
         set(CMAKE_REQUIRED_FLAGS "${SYCL_TOOLCHAIN_CXX_FLAGS}")
         get_target_property(CMAKE_REQUIRED_LIBRARIES MKL::MKL INTERFACE_LINK_LIBRARIES)
         list(APPEND CMAKE_REQUIRED_LIBRARIES "${GMX_EXTRA_LIBRARIES}")
@@ -447,7 +458,7 @@ int main() {
         unset(CMAKE_REQUIRED_LIBRARIES)
         unset(CMAKE_REQUIRED_INCLUDES)
         if (NOT CAN_LINK_SYCL_MKL)
-            message(FATAL_ERROR "Cannot link mkl_sycl. Make sure the MKL and compiler versions are compatible.")
+            message(WARNING "Cannot link mkl_sycl. Make sure the MKL and compiler versions are compatible.")
         endif()
 
         set(_sycl_has_valid_fft TRUE)
@@ -479,12 +490,8 @@ int main() {
         set_property(SOURCE ${ARGS_SOURCES} APPEND PROPERTY COMPILE_OPTIONS
             ${SYCL_TOOLCHAIN_CXX_FLAGS}
             ${SYCL_CXX_FLAGS_EXTRA})
-        if (WIN32) # Linking flags handling is not reliable on Windows, so we pass the bare minimum
-            target_link_options(${ARGS_TARGET} PRIVATE ${SYCL_CXX_FLAGS})
-        else()
-            string(REPLACE " " ";" SYCL_TOOLCHAIN_LINKER_FLAGS_LIST "${SYCL_TOOLCHAIN_LINKER_FLAGS} ${SYCL_CXX_FLAGS_EXTRA}")
-            target_link_options(${ARGS_TARGET} PRIVATE ${SYCL_TOOLCHAIN_LINKER_FLAGS_LIST})
-        endif()
+        string(REPLACE " " ";" SYCL_TOOLCHAIN_LINKER_FLAGS_LIST "${SYCL_TOOLCHAIN_LINKER_FLAGS} ${SYCL_CXX_FLAGS_EXTRA}")
+        target_link_options(${ARGS_TARGET} PRIVATE ${SYCL_TOOLCHAIN_LINKER_FLAGS_LIST})
     endfunction(add_sycl_to_target)
 endif()
 

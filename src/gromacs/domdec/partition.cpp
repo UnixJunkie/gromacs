@@ -465,7 +465,7 @@ static void restoreAtomGroups(gmx_domdec_t* dd, const t_state* state)
     /* Copy back the global charge group indices from state
      * and rebuild the local charge group to atom index.
      */
-    for (gmx::index i = 0; i < atomGroupsState.ssize(); i++)
+    for (gmx::Index i = 0; i < atomGroupsState.ssize(); i++)
     {
         globalAtomGroupIndices[i] = atomGroupsState[i];
     }
@@ -2537,7 +2537,7 @@ static void orderVector(gmx::ArrayRef<const gmx_cgsort_t> sort,
                         gmx::ArrayRef<T>                  vectorToSort,
                         std::vector<T>*                   workVector)
 {
-    if (gmx::index(workVector->size()) < sort.ssize())
+    if (gmx::Index(workVector->size()) < sort.ssize())
     {
         workVector->resize(sort.size());
     }
@@ -2585,15 +2585,15 @@ static void dd_sort_state(gmx_domdec_t* dd, t_forcerec* fr, t_state* state)
     GMX_RELEASE_ASSERT(cgsort.ssize() == dd->numHomeAtoms,
                        "We should sort all the home atom groups");
 
-    if (state->flags & enumValueToBitMask(StateEntry::X))
+    if (state->hasEntry(StateEntry::X))
     {
         orderVector(cgsort, makeArrayRef(state->x), rvecBuffer.buffer);
     }
-    if (state->flags & enumValueToBitMask(StateEntry::V))
+    if (state->hasEntry(StateEntry::V))
     {
         orderVector(cgsort, makeArrayRef(state->v), rvecBuffer.buffer);
     }
-    if (state->flags & enumValueToBitMask(StateEntry::Cgp))
+    if (state->hasEntry(StateEntry::Cgp))
     {
         orderVector(cgsort, makeArrayRef(state->cg_p), rvecBuffer.buffer);
     }
@@ -3135,7 +3135,7 @@ void dd_partition_system(FILE*                     fplog,
         dd_sort_state(dd, fr, state_local);
 
         /* After sorting and compacting we set the correct size */
-        state_change_natoms(state_local, comm->atomRanges.numHomeAtoms());
+        state_local->changeNumAtoms(comm->atomRanges.numHomeAtoms());
 
         /* Rebuild all the indices */
         dd->ga2la->clear(false);
@@ -3252,9 +3252,7 @@ void dd_partition_system(FILE*                     fplog,
     /* Make space for the extra coordinates for virtual site
      * or constraint communication.
      */
-    state_local->natoms = comm->atomRanges.numAtomsTotal();
-
-    state_change_natoms(state_local, state_local->natoms);
+    state_local->changeNumAtoms(comm->atomRanges.numAtomsTotal());
 
     int nat_f_novirsum;
     if (vsite && vsite->numInterUpdategroupVirtualSites())

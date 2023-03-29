@@ -451,10 +451,8 @@ static void init_em(FILE*                fplog,
     }
     else
     {
-        state_change_natoms(state_global, state_global->natoms);
         /* Just copy the state */
         ems->s = *state_global;
-        state_change_natoms(&ems->s, ems->s.natoms);
 
         mdAlgorithmsSetupAtomData(
                 cr, *ir, top_global, top, fr, &ems->f, mdAtoms, constr, vsite, shellfc ? *shellfc : nullptr);
@@ -648,12 +646,12 @@ static bool do_em_step(const t_commrec*                          cr,
         gmx_incons("state mismatch in do_em_step");
     }
 
-    s2->flags = s1->flags;
+    s2->setFlags(s1->flags());
 
-    if (s2->natoms != s1->natoms)
+    if (s2->numAtoms() != s1->numAtoms())
     {
-        state_change_natoms(s2, s1->natoms);
-        ems2->f.resize(s2->natoms);
+        s2->changeNumAtoms(s1->numAtoms());
+        ems2->f.resize(s2->numAtoms());
     }
     if (haveDDAtomOrdering(*cr) && s2->cg_gl.size() != s1->cg_gl.size())
     {
@@ -700,7 +698,7 @@ static bool do_em_step(const t_commrec*                          cr,
             GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR
         }
 
-        if (s2->flags & enumValueToBitMask(StateEntry::Cgp))
+        if (s2->hasEntry(StateEntry::Cgp))
         {
             /* Copy the CG p vector */
             const rvec* p1 = s1->cg_p.rvec_array();
@@ -717,7 +715,7 @@ static bool do_em_step(const t_commrec*                          cr,
         {
             /* OpenMP does not supported unsigned loop variables */
 #pragma omp for schedule(static) nowait
-            for (gmx::index i = 0; i < gmx::ssize(s2->cg_gl); i++)
+            for (gmx::Index i = 0; i < gmx::ssize(s2->cg_gl); i++)
             {
                 s2->cg_gl[i] = s1->cg_gl[i];
             }
@@ -1285,10 +1283,7 @@ void LegacySimulator::do_cg()
     if (MAIN(cr))
     {
         // In CG, the state is extended with a search direction
-        state_global->flags |= enumValueToBitMask(StateEntry::Cgp);
-
-        // Ensure the extra per-atom state array gets allocated
-        state_change_natoms(state_global, state_global->natoms);
+        state_global->addEntry(StateEntry::Cgp);
 
         // Initialize the search direction to zero
         for (RVec& cg_p : state_global->cg_p)
@@ -1422,7 +1417,7 @@ void LegacySimulator::do_cg()
 
     if (MAIN(cr))
     {
-        double sqrtNumAtoms = sqrt(static_cast<double>(state_global->natoms));
+        double sqrtNumAtoms = sqrt(static_cast<double>(state_global->numAtoms()));
         fprintf(stderr, "   F-max             = %12.5e on atom %d\n", s_min->fmax, s_min->a_fmax + 1);
         fprintf(stderr, "   F-Norm            = %12.5e\n", s_min->fnorm / sqrtNumAtoms);
         fprintf(stderr, "\n");
@@ -1835,7 +1830,7 @@ void LegacySimulator::do_cg()
         {
             if (mdrunOptions.verbose)
             {
-                double sqrtNumAtoms = sqrt(static_cast<double>(state_global->natoms));
+                double sqrtNumAtoms = sqrt(static_cast<double>(state_global->numAtoms()));
                 fprintf(stderr,
                         "\rStep %d, Epot=%12.6e, Fnorm=%9.3e, Fmax=%9.3e (atom %d)\n",
                         step,
@@ -1958,7 +1953,7 @@ void LegacySimulator::do_cg()
 
     if (MAIN(cr))
     {
-        double sqrtNumAtoms = sqrt(static_cast<double>(state_global->natoms));
+        double sqrtNumAtoms = sqrt(static_cast<double>(state_global->numAtoms()));
         print_converged(stderr, CG, inputrec->em_tol, step, converged, number_steps, s_min, sqrtNumAtoms);
         print_converged(fplog, CG, inputrec->em_tol, step, converged, number_steps, s_min, sqrtNumAtoms);
 
@@ -2004,7 +1999,7 @@ void LegacySimulator::do_lbfgs()
                 "do not use constraints, or use another minimizer (e.g. steepest descent).");
     }
 
-    const int n        = 3 * state_global->natoms;
+    const int n        = 3 * state_global->numAtoms();
     const int nmaxcorr = inputrec->nbfgscorr;
 
     std::vector<real> p(n);
@@ -2183,7 +2178,7 @@ void LegacySimulator::do_lbfgs()
 
     if (MAIN(cr))
     {
-        double sqrtNumAtoms = sqrt(static_cast<double>(state_global->natoms));
+        double sqrtNumAtoms = sqrt(static_cast<double>(state_global->numAtoms()));
         fprintf(stderr, "Using %d BFGS correction steps.\n\n", nmaxcorr);
         fprintf(stderr, "   F-max             = %12.5e on atom %d\n", ems.fmax, ems.a_fmax + 1);
         fprintf(stderr, "   F-Norm            = %12.5e\n", ems.fnorm / sqrtNumAtoms);
@@ -2664,7 +2659,7 @@ void LegacySimulator::do_lbfgs()
         {
             if (mdrunOptions.verbose)
             {
-                double sqrtNumAtoms = sqrt(static_cast<double>(state_global->natoms));
+                double sqrtNumAtoms = sqrt(static_cast<double>(state_global->numAtoms()));
                 fprintf(stderr,
                         "\rStep %d, Epot=%12.6e, Fnorm=%9.3e, Fmax=%9.3e (atom %d)\n",
                         step,
@@ -2780,7 +2775,7 @@ void LegacySimulator::do_lbfgs()
 
     if (MAIN(cr))
     {
-        double sqrtNumAtoms = sqrt(static_cast<double>(state_global->natoms));
+        double sqrtNumAtoms = sqrt(static_cast<double>(state_global->numAtoms()));
         print_converged(stderr, LBFGS, inputrec->em_tol, step, converged, number_steps, &ems, sqrtNumAtoms);
         print_converged(fplog, LBFGS, inputrec->em_tol, step, converged, number_steps, &ems, sqrtNumAtoms);
 
@@ -3108,7 +3103,7 @@ void LegacySimulator::do_steep()
 
     if (MAIN(cr))
     {
-        double sqrtNumAtoms = sqrt(static_cast<double>(state_global->natoms));
+        double sqrtNumAtoms = sqrt(static_cast<double>(state_global->numAtoms()));
 
         print_converged(stderr, SD, inputrec->em_tol, count, bDone, nsteps, s_min, sqrtNumAtoms);
         print_converged(fplog, SD, inputrec->em_tol, count, bDone, nsteps, s_min, sqrtNumAtoms);
@@ -3318,7 +3313,7 @@ void LegacySimulator::do_nm()
     bool bNS          = true;
     auto state_work_x = makeArrayRef(state_work.s.x);
     auto state_work_f = state_work.f.view().force();
-    for (index aid = cr->nodeid; aid < ssize(atom_index); aid += nnodes)
+    for (Index aid = cr->nodeid; aid < ssize(atom_index); aid += nnodes)
     {
         size_t atom = atom_index[aid];
         for (size_t d = 0; d < DIM; d++)
@@ -3359,7 +3354,7 @@ void LegacySimulator::do_nm()
                                         top,
                                         constr,
                                         enerd,
-                                        state_work.s.natoms,
+                                        state_work.s.numAtoms(),
                                         state_work.s.x.arrayRefWithPadding(),
                                         state_work.s.v.arrayRefWithPadding(),
                                         state_work.s.box,
@@ -3414,7 +3409,7 @@ void LegacySimulator::do_nm()
             }
             else
             {
-                for (index node = 0; (node < nnodes && aid + node < ssize(atom_index)); node++)
+                for (Index node = 0; (node < nnodes && aid + node < ssize(atom_index)); node++)
                 {
                     if (node > 0)
                     {

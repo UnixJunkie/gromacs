@@ -333,7 +333,7 @@ public:
 
         // Group pairs
         enerdata_ = std::make_unique<gmx_enerdata_t>(
-                mtop_.groups.groups[SimulationAtomGroupType::EnergyOutput].size(), 0);
+                mtop_.groups.groups[SimulationAtomGroupType::EnergyOutput].size(), nullptr);
 
         // Kinetic energy and related data
         ekindata_.tcstat.resize(mtop_.groups.groups[SimulationAtomGroupType::TemperatureCoupling].size());
@@ -497,7 +497,7 @@ public:
             ekindata_.setCurrentReferenceTemperature(i, *testValue);
         }
 
-        for (index k = 0; k < ssize(mtop_.groups.groups[SimulationAtomGroupType::TemperatureCoupling])
+        for (Index k = 0; k < ssize(mtop_.groups.groups[SimulationAtomGroupType::TemperatureCoupling])
                                       * inputrec_.opts.nhchainlength;
              k++)
         {

@@ -380,17 +380,15 @@ void gmx::LegacySimulator::do_md()
                             nrnb,
                             nullptr,
                             FALSE);
-        upd.updateAfterPartition(state->natoms, md->cFREEZE, md->cTC, md->cACC);
+        upd.updateAfterPartition(state->numAtoms(), md->cFREEZE, md->cTC, md->cACC);
         fr->longRangeNonbondeds->updateAfterPartition(*md);
     }
     else
     {
-        state_change_natoms(state_global, state_global->natoms);
-
         /* Generate and initialize new topology */
         mdAlgorithmsSetupAtomData(cr, *ir, top_global, top, fr, &f, mdAtoms, constr, vsite, shellfc);
 
-        upd.updateAfterPartition(state->natoms, md->cFREEZE, md->cTC, md->cACC);
+        upd.updateAfterPartition(state->numAtoms(), md->cFREEZE, md->cTC, md->cACC);
         fr->longRangeNonbondeds->updateAfterPartition(*md);
     }
 
@@ -542,7 +540,7 @@ void gmx::LegacySimulator::do_md()
 
     if (!ir->bContinuation)
     {
-        if (state->flags & enumValueToBitMask(StateEntry::V))
+        if (state->hasEntry(StateEntry::V))
         {
             auto v = makeArrayRef(state->v);
             /* Set the velocities of vsites, shells and frozen atoms to zero */
@@ -800,13 +798,28 @@ void gmx::LegacySimulator::do_md()
             bNS,
             walltime_accounting);
 
+    real checkpointPeriod = mdrunOptions.checkpointOptions.period;
+    if (ir->bExpanded)
+    {
+        GMX_LOG(mdlog.info)
+                .asParagraph()
+                .appendText(
+                        "Expanded ensemble with the legacy simulator does not always "
+                        "checkpoint correctly, so checkpointing is disabled. You will "
+                        "not be able to do a checkpoint restart of this simulation. "
+                        "If you use the modular simulator (e.g. by choosing md-vv integrator) "
+                        "then checkpointing is enabled. See "
+                        "https://gitlab.com/gromacs/gromacs/-/issues/4629 for details.");
+        // Use a negative period to disable checkpointing.
+        checkpointPeriod = -1;
+    }
     auto checkpointHandler = std::make_unique<CheckpointHandler>(
             compat::make_not_null<SimulationSignal*>(&signals[eglsCHKPT]),
             simulationsShareState,
             ir->nstlist == 0,
             MAIN(cr),
             mdrunOptions.writeConfout,
-            mdrunOptions.checkpointOptions.period);
+            checkpointPeriod);
 
     const bool resetCountersIsLocal = true;
     auto       resetHandler         = std::make_unique<ResetHandler>(
@@ -987,7 +1000,7 @@ void gmx::LegacySimulator::do_md()
                                     nrnb,
                                     wcycle,
                                     do_verbose && !bPMETunePrinting);
-                upd.updateAfterPartition(state->natoms, md->cFREEZE, md->cTC, md->cACC);
+                upd.updateAfterPartition(state->numAtoms(), md->cFREEZE, md->cTC, md->cACC);
                 fr->longRangeNonbondeds->updateAfterPartition(*md);
             }
         }
@@ -1160,7 +1173,7 @@ void gmx::LegacySimulator::do_md()
                                     top,
                                     constr,
                                     enerd,
-                                    state->natoms,
+                                    state->numAtoms(),
                                     state->x.arrayRefWithPadding(),
                                     state->v.arrayRefWithPadding(),
                                     state->box,
@@ -2023,7 +2036,7 @@ void gmx::LegacySimulator::do_md()
                                 nrnb,
                                 wcycle,
                                 FALSE);
-            upd.updateAfterPartition(state->natoms, md->cFREEZE, md->cTC, md->cACC);
+            upd.updateAfterPartition(state->numAtoms(), md->cFREEZE, md->cTC, md->cACC);
             fr->longRangeNonbondeds->updateAfterPartition(*md);
         }
 
@@ -2034,7 +2047,7 @@ void gmx::LegacySimulator::do_md()
         /* With all integrators, except VV, we need to retain the pressure
          * at the current step for coupling at the next step.
          */
-        if ((state->flags & enumValueToBitMask(StateEntry::PressurePrevious))
+        if (state->hasEntry(StateEntry::PressurePrevious)
             && (bGStatEveryStep
                 || (ir->pressureCouplingOptions.nstpcouple > 0
                     && step % ir->pressureCouplingOptions.nstpcouple == 0)))

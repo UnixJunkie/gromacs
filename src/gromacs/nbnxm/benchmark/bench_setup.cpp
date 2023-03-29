@@ -301,7 +301,7 @@ static void setupAndRunInstance(const gmx::BenchmarkSystem& system,
 
     t_nrnb nrnb = { 0 };
 
-    gmx_enerdata_t enerd(1, 0);
+    gmx_enerdata_t enerd(1, nullptr);
 
     gmx::StepWorkload stepWork;
     stepWork.computeForces = true;
@@ -371,7 +371,7 @@ static void setupAndRunInstance(const gmx::BenchmarkSystem& system,
 
     const int numIterations = (doWarmup ? options.numWarmupIterations : options.numIterations);
     const PairlistSet& pairlistSet = nbv->pairlistSets().pairlistSet(gmx::InteractionLocality::Local);
-    const gmx::index numPairs = pairlistSet.natpair_ljq_ + pairlistSet.natpair_lj_ + pairlistSet.natpair_q_;
+    const gmx::Index numPairs = pairlistSet.natpair_ljq_ + pairlistSet.natpair_lj_ + pairlistSet.natpair_q_;
     gmx_cycles_t cycles = gmx_cycles_read();
     for (int iter = 0; iter < numIterations; iter++)
     {

@@ -66,9 +66,9 @@
 #    include <unistd.h> // sysconf()
 #endif
 
-gmx_hw_info_t::gmx_hw_info_t(std::unique_ptr<gmx::CpuInfo>          cpuInfo,
-                             std::unique_ptr<gmx::HardwareTopology> hardwareTopology) :
-    cpuInfo(std::move(cpuInfo)), hardwareTopology(std::move(hardwareTopology))
+gmx_hw_info_t::gmx_hw_info_t(std::unique_ptr<gmx::CpuInfo>          theCpuInfo,
+                             std::unique_ptr<gmx::HardwareTopology> theHardwareTopology) :
+    cpuInfo(std::move(theCpuInfo)), hardwareTopology(std::move(theHardwareTopology))
 {
 }
 
@@ -287,7 +287,7 @@ static void gmx_collect_hardware_mpi(const gmx::CpuInfo&             cpuInfo,
     hardwareInfo->ncore_min            = -maxMinReduced[6];
     hardwareInfo->ncore_max            = maxMinReduced[0];
     hardwareInfo->nProcessingUnits_tot = countsReduced[2];
-    hardwareInfo->nProcessingUnits_min = maxMinReduced[7];
+    hardwareInfo->nProcessingUnits_min = -maxMinReduced[7];
     hardwareInfo->nProcessingUnits_max = maxMinReduced[1];
     hardwareInfo->maxThreads_tot       = countsReduced[3];
     hardwareInfo->maxThreads_min       = -maxMinReduced[8];

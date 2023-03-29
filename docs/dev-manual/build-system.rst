@@ -225,7 +225,7 @@ Variables affecting compilation/linking
 
 .. cmake:: GMX_INSTALL_DATASUBDIR
 
-   Sets the subdirectory under CMAKE_INSTALL_DATADIR where GROMACS-specific
+   Sets the subdirectory under CMAKE_INSTALL_DATADIR where |Gromacs|-specific
    read-only architecture-independent data files are installed. The default
    is ``gromacs``, which means the files will go under ``share/gromacs``.
    To alter the ``share`` part, change CMAKE_INSTALL_DATADIR.
@@ -336,11 +336,6 @@ Variables affecting compilation/linking
 
    Path to VMD plugins for molfile I/O. Only used when ``GMX_USE_PLUGINS`` is enabled.
 
-.. cmake:: GMX_XML
-
-   Currently, this option has no effect on the compilation or linking, since
-   there is no code outside the tests that would use :file:`libxml2`.
-
 Variables affecting the ``all`` target
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -423,7 +418,7 @@ Variables affecting special targets
     targets ``gmxapi-cppdocs`` and ``gmxapi-cppdocs-dev`` when Doxygen is
     available. Also exports CMake configuration files for ``gmxapi`` that allow
     ``find_package(gmxapi)`` to import the ``Gromacs::gmxapi`` CMake target in
-    client projects that search the GROMACS installation root.
+    client projects that search the |Gromacs| installation root.
 
 .. cmake:: GMX_BUILD_MANUAL
 
@@ -491,7 +486,7 @@ External libraries
 
    List external libraries used (either from src/external/, or from the
    system), whether they are required or optional, what functionality they
-   provide for Gromacs, and how to control their use.
+   provide for |Gromacs|, and how to control their use.
 
 Special targets
 ---------------
@@ -535,7 +530,7 @@ gmxapi-cppdocs
     Builds API documentation for gmxapi. Useful to authors of client software.
     Documentation is generated in :file:`docs/api-user` in the build directory.
 gmxapi-cppdocs-dev
-    Extract documentation for gmxapi and GROMACS developers to
+    Extract documentation for gmxapi and |Gromacs| developers to
     :file:`docs/api-dev`.
 install-guide
    Runs Sphinx to generate a plain-text INSTALL file for the source package.
@@ -566,7 +561,7 @@ tests
    See :doc:`testutils`.
 webpage
    Collection target that runs the other documentation targets to generate the
-   full set of HTML (and linked) documentaion.
+   full set of HTML (and linked) documentation.
    This target is used as part of the CI.
    All CMake code is in :file:`docs/`.
 webpage-sphinx
