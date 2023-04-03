@@ -338,6 +338,7 @@ struct MDModulesNotifiers
      * const t_commrec& provides a communicator to the modules during simulation
      *                  setup
      * const MdRunInputFilename& Allows modules to know .tpr filename during mdrun
+     * const EnsembleTemperature& provides modules with the constant ensemble temperature
      */
     BuildMDModulesNotifier<const KeyValueTreeObject&,
                            LocalAtomSetManager*,
