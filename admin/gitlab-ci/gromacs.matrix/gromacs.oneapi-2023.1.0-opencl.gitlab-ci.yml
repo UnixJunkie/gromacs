@@ -13,7 +13,7 @@
 #   SIMD: AVX2_256
 #   Parallelism nt/ntomp: 4/2
 
-gromacs:oneapi-2022.2.0-opencl:configure:
+gromacs:oneapi-2023.1.0-opencl:configure:
   extends:
    - .gromacs:base:configure
    - .use-oneapi:base
@@ -24,7 +24,7 @@ gromacs:oneapi-2022.2.0-opencl:configure:
     CMAKE: /usr/local/cmake-3.18.4/bin/cmake
     COMPILER_MAJOR_VERSION: 2021
 
-gromacs:oneapi-2022.2.0-opencl:build:
+gromacs:oneapi-2023.1.0-opencl:build:
   extends:
     - .variables:default
     - .gromacs:base:build
@@ -35,9 +35,9 @@ gromacs:oneapi-2022.2.0-opencl:build:
   variables:
     CMAKE: /usr/local/cmake-3.18.4/bin/cmake
   needs:
-    - job: gromacs:oneapi-2022.2.0-opencl:configure
+    - job: gromacs:oneapi-2023.1.0-opencl:configure
 
-gromacs:oneapi-2022.2.0-opencl:test:
+gromacs:oneapi-2023.1.0-opencl:test:
   extends:
     - .gromacs:base:test
     - .use-oneapi:base
@@ -47,9 +47,9 @@ gromacs:oneapi-2022.2.0-opencl:test:
     CMAKE: /usr/local/cmake-3.18.4/bin/cmake
     GMX_FORCE_UPDATE_DEFAULT_CPU: 1
   needs:
-    - job: gromacs:oneapi-2022.2.0-opencl:build
+    - job: gromacs:oneapi-2023.1.0-opencl:build
 
-gromacs:oneapi-2022.2.0-opencl:regressiontest:
+gromacs:oneapi-2023.1.0-opencl:regressiontest:
   extends:
     - .gromacs:base:regressiontest
     - .use-oneapi:base
@@ -58,6 +58,6 @@ gromacs:oneapi-2022.2.0-opencl:regressiontest:
   variables:
     CMAKE: /usr/local/cmake-3.18.4/bin/cmake
   needs:
-    - job: gromacs:oneapi-2022.2.0-opencl:build
+    - job: gromacs:oneapi-2023.1.0-opencl:build
     - job: regressiontests:prepare
 
