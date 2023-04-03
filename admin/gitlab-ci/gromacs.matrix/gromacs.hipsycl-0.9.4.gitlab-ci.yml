@@ -131,7 +131,6 @@ gromacs:hipsycl-rocm-nightly:test:
 # TODO: Enable regression tests when LLVM with https://reviews.llvm.org/D131884 is used (ROCm 5.4 maybe)
 
 
-
 gromacs:hipsycl-nvidia-mpi:configure:
   extends:
     - .gromacs:base:configure
