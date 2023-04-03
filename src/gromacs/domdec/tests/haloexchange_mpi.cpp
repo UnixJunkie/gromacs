@@ -555,7 +555,7 @@ TEST(HaloExchangeTest, Coordinates1dHaloWith1Pulse)
     // Check results
     checkResults1dHaloWith1Pulse(h_x.data(), &dd, numHomeAtoms);
 
-    if (GMX_GPU_CUDA && GMX_THREAD_MPI) // repeat with GPU halo codepath
+    if (GMX_GPU_CUDA || GMX_GPU_SYCL) // repeat with GPU halo codepath
     {
         // early return if no devices are available.
         if (getTestHardwareEnvironment()->getTestDeviceList().empty())
