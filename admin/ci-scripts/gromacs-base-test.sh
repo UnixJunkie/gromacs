@@ -41,7 +41,8 @@ fi
 if grep -qF 'amd.com/gpu' <<< "$KUBERNETES_EXTENDED_RESOURCE_NAME"; then
     clinfo -l || true;
 fi
-if grep -qF 'intel.com/gpu' <<< "$KUBERNETES_EXTENDED_RESOURCE_NAME"; then
+if grep -q '\(intel\.com/gpu\|gpu\.intel\.com/i915\)' <<< "$KUBERNETES_EXTENDED_RESOURCE_NAME"; then
+    clinfo -l || true;
     sycl-ls || true;
     export SYCL_CACHE_PERSISTENT=1; # Issue #4218
 fi
