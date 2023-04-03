@@ -49,6 +49,9 @@ gromacs:oneapi-2023.1.0-opencl:test:
     KUBERNETES_EXTENDED_RESOURCE_NAME: "gpu.intel.com/i915"
     KUBERNETES_EXTENDED_RESOURCE_LIMIT: 1
     GMX_TEST_LABELS: "QuickGpuTest|SlowGpuTest"
+    # Kernel compilation is not too slow, but is repeated many times in each test, so caching within a job is nice
+    # See https://github.com/intel/compute-runtime/blob/master/opencl/doc/FAQ.md
+    cl_cache_dir: "/tmp"
   needs:
     - job: gromacs:oneapi-2023.1.0-opencl:build
 
@@ -62,6 +65,9 @@ gromacs:oneapi-2023.1.0-opencl:regressiontest:
     CMAKE: /usr/local/cmake-3.18.4/bin/cmake
     KUBERNETES_EXTENDED_RESOURCE_NAME: "gpu.intel.com/i915"
     KUBERNETES_EXTENDED_RESOURCE_LIMIT: 1
+    # Kernel compilation is not too slow, but is repeated many times in each test, so caching within a job is nice
+    # See https://github.com/intel/compute-runtime/blob/master/opencl/doc/FAQ.md
+    cl_cache_dir: "/tmp"
   needs:
     - job: gromacs:oneapi-2023.1.0-opencl:build
     - job: regressiontests:prepare
