@@ -3,11 +3,11 @@
 #   OS: Ubuntu oldest supported
 #   Compiler: ICPX newest supported
 #   FFT: MKL
-#   GPU: OpenCL
+#   GPU: OpenCL, cluster size 4
 #   Scope: configure, build, unit tests, regression tests
 # Test implementation choices (free to change as needed):
 #   OS: Ubuntu 22.04
-#   Build type: Debug
+#   Build type: RelWithAssert
 #   Compiler: ICPX 2023.1
 #   MPI: thread_MPI
 #   SIMD: AVX2_256
@@ -22,7 +22,8 @@ gromacs:oneapi-2023.1.0-opencl:configure:
   image: ${CI_REGISTRY}/gromacs/gromacs/ci-ubuntu-22.04-oneapi-2023.1.0-intel-compute-runtime
   variables:
     CMAKE: /usr/local/cmake-3.18.4/bin/cmake
-    COMPILER_MAJOR_VERSION: 2021
+    CMAKE_BUILD_TYPE_OPTIONS: "-DCMAKE_BUILD_TYPE=RelWithAssert"
+    CMAKE_EXTRA_OPTIONS: "-DGMX_GPU_NB_CLUSTER_SIZE=4"
 
 gromacs:oneapi-2023.1.0-opencl:build:
   extends:
@@ -45,7 +46,9 @@ gromacs:oneapi-2023.1.0-opencl:test:
   image: ${CI_REGISTRY}/gromacs/gromacs/ci-ubuntu-22.04-oneapi-2023.1.0-intel-compute-runtime
   variables:
     CMAKE: /usr/local/cmake-3.18.4/bin/cmake
-    GMX_FORCE_UPDATE_DEFAULT_CPU: 1
+    KUBERNETES_EXTENDED_RESOURCE_NAME: "intel.com/gpu"
+    KUBERNETES_EXTENDED_RESOURCE_LIMIT: 1
+    GMX_TEST_LABELS: "QuickGpuTest|SlowGpuTest"
   needs:
     - job: gromacs:oneapi-2023.1.0-opencl:build
 
@@ -57,6 +60,8 @@ gromacs:oneapi-2023.1.0-opencl:regressiontest:
   image: ${CI_REGISTRY}/gromacs/gromacs/ci-ubuntu-22.04-oneapi-2023.1.0-intel-compute-runtime
   variables:
     CMAKE: /usr/local/cmake-3.18.4/bin/cmake
+    KUBERNETES_EXTENDED_RESOURCE_NAME: "intel.com/gpu"
+    KUBERNETES_EXTENDED_RESOURCE_LIMIT: 1
   needs:
     - job: gromacs:oneapi-2023.1.0-opencl:build
     - job: regressiontests:prepare
