@@ -30,7 +30,7 @@ pushd python_packaging/gmxapi
   # Build and install the gmxapi Python package.
   # Use the documented mechanism for getting GROMACS installation and build system hints.
   # See docs/gmxapi/userguide/install.rst and docs/release-notes/2022/major/portability.rst
-  CMAKE_ARGS="-Dgmxapi_ROOT=$GROMACS_ROOT -C $GROMACS_ROOT/share/cmake/gromacs${GMX_SUFFIX}/gromacs-hints${GMX_SUFFIX}.cmake" \
+  CMAKE_ARGS="-Dgmxapi_ROOT=$GROMACS_ROOT;-C$GROMACS_ROOT/share/cmake/gromacs${GMX_SUFFIX}/gromacs-hints${GMX_SUFFIX}.cmake" \
       python -m pip install \
           --no-build-isolation \
           --no-cache-dir \
