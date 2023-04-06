@@ -94,6 +94,7 @@ void print_dd_statistics(const t_commrec* cr, const t_inputrec& inputrec, FILE* 
  * \param[in] state_global  Global state
  * \param[in] top_global    Global topology
  * \param[in] inputrec      Input record
+ * \param[in] mdModulesNotifiers  MDModules notifications handler
  * \param[in] imdSession    IMD handle
  * \param[in] pull_work     Pulling data
  * \param[in] state_local   Local state
