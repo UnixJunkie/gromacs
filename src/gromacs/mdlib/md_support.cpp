@@ -47,6 +47,7 @@
 #include "gromacs/math/units.h"
 #include "gromacs/math/utilities.h"
 #include "gromacs/math/vec.h"
+#include "gromacs/mdlib/boxdeformation.h"
 #include "gromacs/mdlib/coupling.h"
 #include "gromacs/mdlib/gmx_omp_nthreads.h"
 #include "gromacs/mdlib/simulationsignal.h"
@@ -102,15 +103,12 @@ static void calc_ke_part_normal(const matrix                   deform,
                       "With box deformation a single temperature coupling group is required.");
         }
 
-        // Form a matrix that we can use to multiply the coordinates with to obtain
-        // the flow at each coordinate
-        for (int d1 = 0; d1 < DIM; d1++)
-        {
-            for (int d2 = 0; d2 < DIM; d2++)
-            {
-                deformFlowMatrix[d1][d2] = deform[d2][d1] / box[d2][d2];
-            }
-        }
+        gmx::setBoxDeformationFlowMatrix(deform, box, deformFlowMatrix);
+    }
+    else
+    {
+        GMX_UNUSED_VALUE(deform);
+        GMX_UNUSED_VALUE(box);
     }
 
     int                         g;

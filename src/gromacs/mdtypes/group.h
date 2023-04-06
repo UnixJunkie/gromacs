@@ -189,6 +189,9 @@ private:
     real currentEnsembleTemperature_;
 
 public:
+    //! Returns whether  the box is continuously deformed
+    bool haveBoxDeformation() const { return haveBoxDeformation_; }
+
     //! T-coupling data
     std::vector<t_grp_tcstat> tcstat;
     //! Allocated locations for *_work members
@@ -215,6 +218,8 @@ public:
     ~gmx_ekindata_t();
 
 private:
+    //! Whether the box is continuously deformed
+    bool haveBoxDeformation_;
     //! For size of ekin_work
     int nthreads_ = 0;
 };

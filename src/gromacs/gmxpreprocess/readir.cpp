@@ -5111,15 +5111,49 @@ void triple_check(const char* mdparin, t_inputrec* ir, gmx_mtop_t* sys, WarningH
         }
     }
 
-
     if (ir->bDoAwh && !haveConstantEnsembleTemperature(*ir))
     {
         wi->addError("With AWH a constant ensemble temperature is required");
     }
 
-    if (ir_haveBoxDeformation(*ir) && ir->opts.ngtc != 1)
+    if (ir_haveBoxDeformation(*ir))
     {
-        wi->addError("With box deformation, a single temperature coupling group is required");
+        if (EI_MD(ir->eI) && ir->eI != IntegrationAlgorithm::MD
+            && (EI_SD(ir->eI) || ir->etc != TemperatureCoupling::No))
+        {
+            sprintf(warn_buf,
+                    "With all integrators except for %s, the whole velocity including the flow "
+                    "driven by the deform option is scaled by the thermostat (note that the "
+                    "reported kinetic energies and temperature are always computed excluding the "
+                    "flow profile)",
+                    enumValueToString(IntegrationAlgorithm::MD));
+            wi->addNote(warn_buf);
+        }
+
+        if (ir->opts.ngtc != 1)
+        {
+            wi->addError("With box deformation, a single temperature coupling group is required");
+        }
+    }
+
+    int numAccelerationAlgorithms = 0;
+    if (ir->useConstantAcceleration)
+    {
+        numAccelerationAlgorithms++;
+    }
+    if (ir->cos_accel != 0)
+    {
+        numAccelerationAlgorithms++;
+    }
+    if (ir_haveBoxDeformation(*ir))
+    {
+        numAccelerationAlgorithms++;
+    }
+    if (numAccelerationAlgorithms > 1)
+    {
+        wi->addError(
+                "Only one of the following three non-equilibrium methods is supported at a time: "
+                "constant acceleration groups, cosine acceleration, box deformation");
     }
 
     check_disre(*sys);

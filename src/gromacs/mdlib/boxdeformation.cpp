@@ -151,4 +151,16 @@ void BoxDeformation::apply(Matrix3x3* box, const int64_t step)
     *box = updatedBox;
 }
 
+void setBoxDeformationFlowMatrix(const matrix boxDeformationVelocity, const matrix box, matrix flowMatrix)
+{
+    for (int d1 = 0; d1 < DIM; d1++)
+    {
+        for (int d2 = 0; d2 < DIM; d2++)
+        {
+            // The flow matrix is transposed with respect to the deform matrix
+            flowMatrix[d1][d2] = boxDeformationVelocity[d2][d1] / box[d2][d2];
+        }
+    }
+}
+
 } // namespace gmx

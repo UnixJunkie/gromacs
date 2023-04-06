@@ -98,6 +98,18 @@ std::unique_ptr<BoxDeformation> buildBoxDeformation(const Matrix3x3&  initialBox
                                                     MPI_Comm          communicator,
                                                     const t_inputrec& inputrec);
 
+/*! \brief Set a matrix for computing the flow velocity at coordinates
+ *
+ * Used with continuous box deformation for calculating the flow profile.
+ * Sets a matrix which can be used to multiply with coordinates to obtain
+ * the flow velocity at that coordinate.
+ *
+ * \param[in]  boxDeformationVelocity  The velocity of the box in nm/ps
+ * \param[in]  box                     The box in nm
+ * \param[out] flowMatrix              The deformation rate in ps^-1
+ */
+void setBoxDeformationFlowMatrix(const matrix boxDeformationVelocity, const matrix box, matrix flowMatrix);
+
 } // namespace gmx
 
 #endif

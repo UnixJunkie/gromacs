@@ -56,6 +56,7 @@ gmx_ekindata_t::gmx_ekindata_t(gmx::ArrayRef<const real>        referenceTempera
     currentReferenceTemperature_(referenceTemperature.begin(), referenceTemperature.end()),
     ensembleTemperatureSetting_(ensembleTemperatureSetting),
     currentEnsembleTemperature_(ensembleTemperature),
+    haveBoxDeformation_(haveBoxDeformation),
     nthreads_(numThreads)
 {
     tcstat.resize(numTemperatureCouplingGroups());
@@ -74,7 +75,7 @@ gmx_ekindata_t::gmx_ekindata_t(gmx::ArrayRef<const real>        referenceTempera
     snew(ekin_work, nthreads_);
     snew(dekindl_work, nthreads_);
 
-    if (haveBoxDeformation)
+    if (haveBoxDeformation_)
     {
         systemMomenta = std::make_unique<SystemMomenta>();
         systemMomentumWork.resize(numThreads);
