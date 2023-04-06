@@ -783,16 +783,16 @@ static void em_dd_partition_system(FILE*                     fplog,
                                    const t_inputrec*         ir,
                                    const MDModulesNotifiers& mdModulesNotifiers,
 
-                                   gmx::ImdSession*          imdSession,
-                                   pull_t*                   pull_work,
-                                   em_state_t*               ems,
-                                   gmx_localtop_t*           top,
-                                   gmx::MDAtoms*             mdAtoms,
-                                   t_forcerec*               fr,
-                                   VirtualSitesHandler*      vsite,
-                                   gmx::Constraints*         constr,
-                                   t_nrnb*                   nrnb,
-                                   gmx_wallcycle*            wcycle)
+                                   gmx::ImdSession*     imdSession,
+                                   pull_t*              pull_work,
+                                   em_state_t*          ems,
+                                   gmx_localtop_t*      top,
+                                   gmx::MDAtoms*        mdAtoms,
+                                   t_forcerec*          fr,
+                                   VirtualSitesHandler* vsite,
+                                   gmx::Constraints*    constr,
+                                   t_nrnb*              nrnb,
+                                   gmx_wallcycle*       wcycle)
 {
     /* Repartition the domain decomposition */
     dd_partition_system(fplog,
