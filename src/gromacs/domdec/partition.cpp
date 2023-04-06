@@ -71,6 +71,7 @@
 #include "gromacs/mdlib/gmx_omp_nthreads.h"
 #include "gromacs/mdlib/mdatoms.h"
 #include "gromacs/mdlib/vsite.h"
+#include "gromacs/mdrunutility/mdmodulesnotifiers.h"
 #include "gromacs/mdtypes/commrec.h"
 #include "gromacs/mdtypes/forcerec.h"
 #include "gromacs/mdtypes/inputrec.h"
@@ -2751,6 +2752,7 @@ void dd_partition_system(FILE*                     fplog,
                          t_state*                  state_global,
                          const gmx_mtop_t&         top_global,
                          const t_inputrec&         inputrec,
+                         const MDModulesNotifiers& mdModulesNotifiers,
                          gmx::ImdSession*          imdSession,
                          pull_t*                   pull_work,
                          t_state*                  state_local,
@@ -3365,6 +3367,11 @@ void dd_partition_system(FILE*                     fplog,
         /* Set the env var GMX_DD_DEBUG if you suspect corrupted indices */
         check_index_consistency(dd, top_global.natoms, "after partitioning");
     }
+
+    // Now we have made the local atom sets and x is up to date, MDModules can be signaled
+    MDModulesDDPartitionedSignal mdModulesDDPartitionedSignal(
+            gmx::makeConstArrayRef(state_local->x).subArray(0, comm->atomRanges.numHomeAtoms()));
+    mdModulesNotifiers.simulationSetupNotifier_.notify(mdModulesDDPartitionedSignal);
 
     wallcycle_stop(wcycle, WallCycleCounter::Domdec);
 }

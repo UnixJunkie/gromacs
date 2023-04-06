@@ -68,6 +68,19 @@ struct MDModulesCheckpointReadingDataOnMain;
 struct MDModulesCheckpointReadingBroadcast;
 struct MDModulesWriteCheckpointData;
 
+/*! \libinternal \brief Notification that the domain decomposition has partioned the system
+ *
+ * This notification is emitted at the end of the DD (re)partioning.
+ * The local atom sets are updated for the new atom order when this signal is emitted.
+ */
+struct MDModulesDDPartitionedSignal
+{
+    MDModulesDDPartitionedSignal(gmx::ArrayRef<const RVec> x) : x_(x) {}
+
+    //! List of local atom coordinates after partitioning
+    gmx::ArrayRef<const RVec> x_;
+};
+
 /*! \libinternal \brief Check if module outputs energy to a specific field.
  *
  * Ensures that energy is output for this module.
@@ -319,6 +332,7 @@ struct MDModulesNotifiers
                            LocalAtomSetManager*,
                            const MDLogger&,
                            const gmx_mtop_t&,
+                           const MDModulesDDPartitionedSignal,
                            MDModulesEnergyOutputToDensityFittingRequestChecker*,
                            MDModulesEnergyOutputToQMMMRequestChecker*,
                            SeparatePmeRanksPermitted*,

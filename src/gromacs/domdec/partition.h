@@ -70,6 +70,7 @@ class ForceBuffers;
 class ImdSession;
 class MDAtoms;
 class MDLogger;
+struct MDModulesNotifiers;
 class VirtualSitesHandler;
 
 //! Check whether the DD grid has moved too far for correctness.
@@ -114,6 +115,7 @@ void dd_partition_system(FILE*                     fplog,
                          t_state*                  state_global,
                          const gmx_mtop_t&         top_global,
                          const t_inputrec&         inputrec,
+                         const MDModulesNotifiers& mdModulesNotifiers,
                          gmx::ImdSession*          imdSession,
                          pull_t*                   pull_work,
                          t_state*                  state_local,
