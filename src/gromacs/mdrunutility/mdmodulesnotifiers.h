@@ -162,12 +162,13 @@ struct QMInputFileName
 };
 
 /*! \libinternal \brief Provides the constant ensemble temperature
- *
- * Check whether the constant ensemble temperature is available.
- * Then, store the value as optional.
  */
 struct EnsembleTemperature
 {
+    /*
+     * Check whether the constant ensemble temperature is available.
+     * Then, store the value as optional.
+     */
     EnsembleTemperature(const t_inputrec& ir)
     {
         if (haveConstantEnsembleTemperature(ir))
@@ -297,7 +298,8 @@ struct MDModulesNotifiers
                            gmx_mtop_t*,
                            const IndexGroupsAndNames&,
                            KeyValueTreeObjectBuilder,
-                           const QMInputFileName&>::type preProcessingNotifier_;
+                           const QMInputFileName&,
+                           const EnsembleTemperature&>::type preProcessingNotifier_;
 
     /*! \brief Handles subscribing and calling checkpointing callback functions.
      *
@@ -350,8 +352,7 @@ struct MDModulesNotifiers
                            const PbcType&,
                            const SimulationTimeStep&,
                            const t_commrec&,
-                           const MdRunInputFilename&,
-                           const EnsembleTemperature&>::type simulationSetupNotifier_;
+                           const MdRunInputFilename&>::type simulationSetupNotifier_;
 };
 
 } // namespace gmx
