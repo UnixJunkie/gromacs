@@ -159,7 +159,6 @@ function (gmx_add_gtest_executable EXENAME)
         endif()
 
         if (ARG_NVSHMEM AND GMX_NVSHMEM)
-            enable_language(CUDA)
             add_executable(${EXENAME} ${UNITTEST_TARGET_OPTIONS}
                 ${ARG_CPP_SOURCE_FILES}
                 ${ARG_CUDA_CU_SOURCE_FILES}

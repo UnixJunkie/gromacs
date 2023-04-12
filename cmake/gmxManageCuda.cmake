@@ -41,6 +41,8 @@ endif()
 
 find_package(CUDA ${REQUIRED_CUDA_VERSION} REQUIRED)
 
+enable_language(CUDA)
+
 if(${CUDA_VERSION} GREATER_EQUAL 11.1)
   set(GMX_HAVE_CUDA_GRAPH_SUPPORT ON)
 endif()
