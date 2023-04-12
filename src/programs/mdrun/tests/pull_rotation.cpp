@@ -38,7 +38,7 @@
  *
  * These tests check the mdrun results for cases where one of the rotation
  * potentials (see the corresponding section in the manual) is turned on.
- * For a small rotation group of 4 atoms with the followin atomic positions
+ * For a small rotation group of 4 atoms with the following atomic positions
  * (.gro format):
  *
  *     4
